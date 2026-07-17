@@ -324,9 +324,9 @@ details[open]{background:#fff}
     <div class="wordmark">AGP<span class="tick">▲</span>INDEX</div>
     <p>Melde dich mit deiner E-Mail an.<br>Du bekommst einen Login-Link — kein Passwort nötig.</p>
     <input type="email" id="loginEmail" placeholder="deine@mail.de" autocomplete="email">
-    <input type="password" id="loginPw" placeholder="Passwort" autocomplete="current-password" style="display:none">
-    <button class="btn-primary" id="btnLogin" onclick="doLogin()">Login-Link senden</button>
-    <p style="margin-top:10px"><a href="#" id="pwToggle" onclick="togglePw();return false" style="font-size:13px;text-decoration:underline;color:var(--russ-70)">Mit Passwort anmelden</a></p>
+    <input type="password" id="loginPw" placeholder="Passwort" autocomplete="current-password">
+    <button class="btn-primary" id="btnLogin" onclick="doLogin()">Anmelden</button>
+    <p style="margin-top:10px"><a href="#" id="pwToggle" onclick="togglePw();return false" style="font-size:13px;text-decoration:underline;color:var(--russ-70)">Stattdessen Login-Link per Mail (limitiert)</a></p>
     <p id="loginMsg" style="min-height:20px"></p>
     <p class="hinweis">Internes Tool der LDO Ostholstein. Zugänge vergibt ausschließlich Thomas Runge.</p>
   </div>
@@ -978,12 +978,12 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
 let ROLLE='agp', MYVM=null, booted=false;
 
 function showLogin(){ document.getElementById('loginOverlay').style.display='flex'; }
-let pwMode=false;
+let pwMode=true; // Standard: Passwort — Supabase-Mailversand ist auf 2-3 Mails/Std. limitiert
 function togglePw(){
   pwMode=!pwMode;
   document.getElementById('loginPw').style.display=pwMode?'block':'none';
   document.getElementById('btnLogin').textContent=pwMode?'Anmelden':'Login-Link senden';
-  document.getElementById('pwToggle').textContent=pwMode?'Lieber Login-Link per Mail':'Mit Passwort anmelden';
+  document.getElementById('pwToggle').textContent=pwMode?'Stattdessen Login-Link per Mail (limitiert)':'Stattdessen mit Passwort anmelden';
 }
 async function doLogin(){
   const email=document.getElementById('loginEmail').value.trim();
@@ -997,7 +997,7 @@ async function doLogin(){
   }else{
     /* shouldCreateUser:false — unbekannte E-Mails bekommen KEIN Konto */
     const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:false}});
-    msg.textContent=error?'Kein Zugang für diese E-Mail. Zugänge vergibt Thomas.':'Link verschickt — prüfe dein Postfach (auch Spam).';
+    msg.textContent=error?(error.message.includes('rate')?'Mail-Versand aktuell limitiert (max. 2–3/Std.) — bitte mit Passwort anmelden.':'Kein Zugang für diese E-Mail. Zugänge vergibt Thomas.'):'Link verschickt — prüfe dein Postfach (auch Spam).';
   }
   btn.disabled=false;
 }
