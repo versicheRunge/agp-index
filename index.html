@@ -13,7 +13,7 @@
   --signal:#0E5A46; --signal-hell:#DCE9E2;
   --amber:#B07A1E; --amber-hell:#F3E7CF;
   --alarm:#A63A26; --alarm-hell:#F0DCD6;
-  --linie:#D6D2C6;
+  --linie:#A69F8E; --linie-hell:#D6D2C6;
   --font-display:'Bricolage Grotesque',sans-serif;
   --font-body:'Source Serif 4',serif;
   --font-mono:'Space Mono',monospace;
@@ -145,6 +145,41 @@ h2.sect{font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:upper
 .staerke{display:flex;gap:10px;align-items:baseline;padding:8px 0;font-size:15.5px}
 .staerke .n{font-family:var(--font-mono);font-weight:700;color:var(--signal)}
 
+/* ---- Depot (AGP-Ansicht, dunkles Signature-Theme) ---- */
+.view.praes.depot{background:#15120E;margin:-18px -18px -76px;padding:0 18px 90px;min-height:100vh}
+.depot .praes-exit{background:rgba(239,237,230,.12);color:#EFEDE6;backdrop-filter:blur(6px)}
+.depot-hero{padding:64px 0 22px;text-align:center}
+.depot-hero .tick{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.16em;color:#8B8579}
+.depot-hero .nm{font-family:var(--font-display);font-size:20px;font-weight:700;color:#EFEDE6;margin:6px 0 20px}
+.depot-hero .kurs{font-family:var(--font-mono);font-weight:700;font-size:56px;line-height:1;color:#EFEDE6;letter-spacing:-.01em}
+.depot-hero .kurs small{font-size:16px;font-weight:400;color:#8B8579;margin-left:6px}
+.depot-hero .delta{display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-family:var(--font-mono);font-size:14px;font-weight:700;padding:6px 14px;border-radius:99px}
+.depot-hero .delta.up{background:rgba(127,209,181,.14);color:#7FD1B5}
+.depot-hero .delta.down{background:rgba(224,168,90,.14);color:#E0A85A}
+.depot .card{background:#211C17;border:1px solid #37312A;box-shadow:none;color:#EFEDE6}
+.depot h2.sect{color:#8B8579}
+.depot .hinweis{color:#7A7468}
+.depot .kpi .lbl{color:#8B8579}
+.depot .kpi .val{color:#EFEDE6}
+.depot .kpi .sub{color:#9A9488}
+.depot .chip{border-color:#3A342C;background:#2A251E;color:#EFEDE6}
+.depot .chip.pos{background:rgba(127,209,181,.14);border-color:#3E8E76;color:#7FD1B5}
+.depot .badge-dq{background:#2A251E;color:#9A9488}
+.depot .staerke .n{color:#7FD1B5}
+.depot .staerke{color:#EFEDE6}
+.depot .nextgoal{background:rgba(127,209,181,.10);color:#EFEDE6}
+.depot .nextgoal b{color:#7FD1B5}
+.depot .liga-row{border-color:#37312A;color:#EFEDE6}
+.depot .liga-grp h4{color:#8B8579}
+.depot .dim .bar,.depot .pbar,.depot .stufen .st{background:#332D25}
+.depot .stufen .st.done{background:#0E5A46}
+.depot .stufen-lbl{color:#7A7468}
+.depot .impuls{background:#2A251E;border-left-color:#7FD1B5;color:#EFEDE6}
+.depot .gh i{background:#332D25}
+.depot .gh i.l1{background:#1E4A3B}.depot .gh i.l2{background:#2D7360}.depot .gh i.l3{background:#7FD1B5}
+.depot .puls-delta{color:#7FD1B5}
+.depot .kurschart{background:#0F0D0A}
+
 .hinweis{font-size:12.5px;color:var(--russ-40);margin-top:14px;line-height:1.45}
 .mover{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--linie);cursor:pointer}
 .mover:last-child{border-bottom:none}
@@ -159,9 +194,23 @@ h2.sect{font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:upper
 .login-box input{width:100%;padding:13px;border:1.5px solid var(--linie);border-radius:10px;font-size:16px;margin-bottom:10px;background:#fff}
 .btn-primary{width:100%;background:var(--russ);color:var(--kalk);font-weight:700;font-size:15px;padding:13px;border-radius:10px}
 .btn-primary:disabled{opacity:.5}
-.drop{border:2px dashed var(--linie);border-radius:var(--r);padding:26px 16px;text-align:center;background:#fff;color:var(--russ-70);font-size:14.5px;margin-bottom:12px}
-.drop b{font-family:var(--font-display);color:var(--russ)}
+.drop{display:block;border:2px dashed var(--linie);border-radius:var(--r);padding:20px 16px;text-align:center;background:#fff;color:var(--russ-70);font-size:13.5px;margin-bottom:12px;cursor:pointer;transition:border-color .15s,background .15s}
+.drop:active,.drop:hover{border-color:var(--russ-40);background:var(--kalk)}
+.drop b{display:block;font-family:var(--font-display);font-size:15px;color:var(--russ);margin-bottom:2px}
+.drop .cta{display:inline-block;margin-top:10px;font-family:var(--font-display);font-weight:700;font-size:12.5px;letter-spacing:.02em;color:var(--russ);background:var(--kalk-tief);padding:7px 14px;border-radius:99px}
 .drop input{display:none}
+.cap{display:block;font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--russ-40);margin:0 0 4px}
+.field{margin-bottom:10px}
+.field input,.field select{width:100%;padding:10px 12px;border:1.5px solid var(--linie);border-radius:8px;background:#fff;font-size:15px}
+.field input:focus,.field select:focus{border-color:var(--russ)}
+.admin-sec{margin-bottom:4px}
+.admin-sec h3{font-family:var(--font-display);font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.admin-sec h3 .ico{width:26px;height:26px;border-radius:7px;background:var(--kalk-tief);display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+.divider{height:1px;background:var(--linie);margin:18px 0;opacity:.6}
+.dtabs{display:flex;gap:6px;margin:16px 0 14px;background:var(--kalk-tief);border-radius:99px;padding:4px;position:sticky;top:56px;z-index:15}
+.dtabs button{flex:1;padding:9px 6px;border-radius:99px;font-size:12.5px;font-weight:700;color:var(--russ-70)}
+.dtabs button.on{background:var(--russ);color:var(--kalk)}
+.dtab{display:none}.dtab.on{display:block;animation:fade .2s ease}
 .imp-table{width:100%;border-collapse:collapse;font-size:13px}
 .imp-table th,.imp-table td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--linie)}
 .imp-table td.mono,.imp-table th.mono{font-family:var(--font-mono);text-align:right}
@@ -290,27 +339,37 @@ details[open]{background:#fff}
   <!-- ============ IMPORT ============ -->
   <section class="view" id="v-import">
     <h2 class="sect" style="margin-top:0">Import-Center</h2>
-    <label class="drop" id="dropWB">
-      <b>Wertungsblatt</b> (AGP_Datenblatt_*.xlsx) hierher ziehen oder tippen<br>
-      <span style="font-size:12.5px">Monatlich · Backfill möglich · inkl. Einzelsätze & Sonderverrechnung</span>
-      <input type="file" accept=".xlsx" onchange="importWB(this.files[0])">
-    </label>
-    <label class="drop" id="dropWE">
-      <b>Wettbewerb</b> (Wettbewerb_Agenturpartner_*.xlsx)<br>
-      <span style="font-size:12.5px">Monatlich · liefert Eintrittsdatum & Rang-Historie</span>
-      <input type="file" accept=".xlsx" onchange="importWE(this.files[0])">
-    </label>
-    <label class="drop" id="dropTS">
-      <b>Tagesstatistik</b> (Tagestatistik_*.xlsx)<br>
-      <span style="font-size:12.5px">Täglich · Upsert auf den laufenden Monat · speist Welle 4 (Puls & Heatmap)</span>
-      <input type="file" accept=".xlsx" onchange="importTS(this.files[0])">
-    </label>
+
+    <div class="card">
+      <div class="admin-sec"><h3><span class="ico">📁</span> Daten hochladen</h3></div>
+      <label class="drop" id="dropWB">
+        <b>Wertungsblatt</b>
+        <span>AGP_Datenblatt_*.xlsx · monatlich · Provisionen, Fixum, Einzelsätze, Sonderverrechnung</span>
+        <span class="cta">Datei auswählen</span>
+        <input type="file" accept=".xlsx" onchange="importWB(this.files[0])">
+      </label>
+      <label class="drop" id="dropTS">
+        <b>Tagesstatistik</b>
+        <span>Tagestatistik_*.xlsx · täglich · speist den Tages-Puls</span>
+        <span class="cta">Datei auswählen</span>
+        <input type="file" accept=".xlsx" onchange="importTS(this.files[0])">
+      </label>
+      <label class="drop" id="dropWE" style="margin-bottom:0">
+        <b>Wettbewerb</b>
+        <span>Wettbewerb_Agenturpartner_*.xlsx · monatlich · Eintrittsdatum & Rang-Historie</span>
+        <span class="cta">Datei auswählen</span>
+        <input type="file" accept=".xlsx" onchange="importWE(this.files[0])">
+      </label>
+    </div>
+
     <div id="impOut"></div>
+
     <div class="card" id="seedCard" style="display:none">
-      <h2 class="sect" style="margin-top:0">Noch keine AGP-Daten</h2>
-      <p style="font-size:14.5px;margin-bottom:10px">Drei Dateien treiben das System: das <b>Wertungsblatt</b> (monatlich — Provisionen, Fixum, Einzelsätze), die <b>Tagesstatistik</b> (täglich — dein Puls) und der <b>Wettbewerb</b> (monatlich — Rang). Zum Kennenlernen kannst du den Startbestand vom 30.06.2026 einspielen:</p>
+      <div class="admin-sec"><h3><span class="ico">🌱</span> Erster Start</h3></div>
+      <p style="font-size:14.5px;margin-bottom:10px">Drei Dateien treiben das System: das <b>Wertungsblatt</b> (monatlich), die <b>Tagesstatistik</b> (täglich) und der <b>Wettbewerb</b> (monatlich). Zum Kennenlernen kannst du den Startbestand vom 30.06.2026 einspielen:</p>
       <button class="btn-primary" onclick="seedDB()">Startbestand (Juni 2026) einspielen</button>
     </div>
+
     <div class="card" id="swAdmin"></div>
     <div class="card" id="userAdmin"></div>
   </section>
@@ -686,6 +745,14 @@ function renderDetail(){
     </div>
   </div>
 
+  <div class="dtabs" role="tablist">
+    <button class="on" data-dt="gespraech" onclick="dtab('gespraech')">Gespräch</button>
+    <button data-dt="zahlen" onclick="dtab('zahlen')">Zahlen</button>
+    <button data-dt="aktivitaet" onclick="dtab('aktivitaet')">Aktivität</button>
+    <button data-dt="fuehrung" onclick="dtab('fuehrung')">Führung</button>
+  </div>
+
+  <div class="dtab on" data-dt="gespraech">
   <div class="card cockpit">
     <h2 class="sect" style="margin-top:0">Fixum-Pfad</h2>
     <div class="row"><span class="l">Produktion (${c.n} Monate)</span><span>${fmt(c.prod)} €</span></div>${c.sv?`<div class="row"><span class="l">Sonderverrechnung (Periodenstart)</span><span>${fmt(c.sv)} €</span></div>`:''}<div class="row"><span class="l"><b>Wertungsrelevant kumuliert</b></span><span><b>${fmt(c.kum)} €</b></span></div>
@@ -714,26 +781,13 @@ function renderDetail(){
   </div>
 
   <div class="card">
-    <h2 class="sect" style="margin-top:0">What-if-Simulator <span class="badge-dq" style="float:right">Restlaufzeit ${Math.max(0,12-c.n)} Monate</span></h2>
-    <div class="wi-row">
-      <label for="wiExtra">Zusätzliche Abschlüsse / Woche</label>
-      <input type="range" id="wiExtra" min="0" max="5" step="0.5" value="0" oninput="wiUpdate()">
-      <span class="wi-val" id="wiExtraVal">0</span>
-    </div>
-    <div class="wi-row">
-      <label for="wiTicket">Ø-Provision pro Abschluss</label>
-      <input type="number" id="wiTicket" value="350" min="50" step="10" oninput="this.dataset.touched=1;wiUpdate()"> <span style="font-size:13px">€</span>
-    </div>
-    <div class="wi-result">
-      <div class="wi-box"><div class="l">Aktueller Kurs</div><div class="v" id="wiBaseTotal">–</div><div class="s" id="wiBaseStufe"></div></div>
-      <div class="wi-box sim"><div class="l">Mit Extra-Einsatz</div><div class="v" id="wiSimTotal">–</div><div class="s" id="wiSimStufe"></div></div>
-    </div>
-    <div class="wi-delta" id="wiDelta"></div>
-
-    <h2 class="sect">Prognose-Band <span class="badge-dq" style="float:right">auf Basis 3M-Tempo</span></h2>
-    <div id="progBand"></div>
+    <h2 class="sect" style="margin-top:0">Coaching-Impulse</h2>
+    <div class="impuls" style="border-color:var(--amber);background:var(--amber-hell)"><b>Analystenkommentar:</b> ${analyst(a)}</div>
+    ${c.imp.map(t=>`<div class="impuls">${t}</div>`).join('')}
+  </div>
   </div>
 
+  <div class="dtab" data-dt="zahlen">
   <div class="card">
     <h2 class="sect" style="margin-top:0">Bewertungsdimensionen <span class="badge-dq" style="float:right">effektive Gewichte bei ${c.active.length}/5 aktiv</span></h2>
     ${dims.map(([k,lbl,sub])=>{
@@ -758,6 +812,29 @@ function renderDetail(){
     <h2 class="sect" style="margin-top:0">Deal-Analytik <span class="badge-dq" style="float:right">aus Einzelsätzen</span></h2>
     <div id="dealsBox"><p class="hinweis">Lade Einzelsätze …</p></div>
   </div>
+  </div>
+
+  <div class="dtab" data-dt="aktivitaet">
+  <div class="card">
+    <h2 class="sect" style="margin-top:0">What-if-Simulator <span class="badge-dq" style="float:right">Restlaufzeit ${Math.max(0,12-c.n)} Monate</span></h2>
+    <div class="wi-row">
+      <label for="wiExtra">Zusätzliche Abschlüsse / Woche</label>
+      <input type="range" id="wiExtra" min="0" max="5" step="0.5" value="0" oninput="wiUpdate()">
+      <span class="wi-val" id="wiExtraVal">0</span>
+    </div>
+    <div class="wi-row">
+      <label for="wiTicket">Ø-Provision pro Abschluss</label>
+      <input type="number" id="wiTicket" value="350" min="50" step="10" oninput="this.dataset.touched=1;wiUpdate()"> <span style="font-size:13px">€</span>
+    </div>
+    <div class="wi-result">
+      <div class="wi-box"><div class="l">Aktueller Kurs</div><div class="v" id="wiBaseTotal">–</div><div class="s" id="wiBaseStufe"></div></div>
+      <div class="wi-box sim"><div class="l">Mit Extra-Einsatz</div><div class="v" id="wiSimTotal">–</div><div class="s" id="wiSimStufe"></div></div>
+    </div>
+    <div class="wi-delta" id="wiDelta"></div>
+
+    <h2 class="sect">Prognose-Band <span class="badge-dq" style="float:right">auf Basis 3M-Tempo</span></h2>
+    <div id="progBand"></div>
+  </div>
 
   <div class="card">
     <h2 class="sect" style="margin-top:0">Tages-Puls <span class="badge-dq" style="float:right">aus täglicher Tagesstatistik</span></h2>
@@ -768,13 +845,9 @@ function renderDetail(){
     <h2 class="sect" style="margin-top:0">Wettbewerb <span class="badge-dq" style="float:right">bundesweit</span></h2>
     <div id="wbBox"><p class="hinweis">Lade …</p></div>
   </div>
-
-  <div class="card">
-    <h2 class="sect" style="margin-top:0">Coaching-Impulse</h2>
-    <div class="impuls" style="border-color:var(--amber);background:var(--amber-hell)"><b>Analystenkommentar:</b> ${analyst(a)}</div>
-    ${c.imp.map(t=>`<div class="impuls">${t}</div>`).join('')}
   </div>
 
+  <div class="dtab" data-dt="fuehrung">
   <div class="card">
     <h2 class="sect" style="margin-top:0">Maßnahmen & Coaching-ROI</h2>
     <div id="masBox"><p class="hinweis">Lade …</p></div>
@@ -793,6 +866,7 @@ function renderDetail(){
         </div></div>`).join('')}
     <p class="hinweis">Bewertungsanker: 1 = nimmt Feedback kaum an · 3 = setzt erwartungsgemäß um · 5 = lernt außergewöhnlich schnell, unterstützt andere. Gespeichert lokal, mit Datum.</p>
   </div>
+  </div>
 
   <div style="display:flex;gap:10px;margin-top:4px">
     <button class="btn-replay" style="background:var(--russ);color:var(--kalk);flex:1" onclick="openPraes('${a.vm}')">Präsentationsmodus (für Gespräch mit ${a.name.split(' ')[0]})</button>
@@ -802,6 +876,12 @@ function renderDetail(){
   setTimeout(()=>{document.getElementById('pfadFill').style.width=Math.min(100,c.quote*100)+'%';},60);
   renderSparten(a); loadDeals(a); wiUpdate(); loadPuls(a,'pulsBox'); loadWettbewerb(a); loadMassnahmen(a); setTimeout(()=>checkCelebration(a),700);
 }
+function dtab(t){
+  document.querySelectorAll('.dtabs button').forEach(b=>b.classList.toggle('on',b.dataset.dt===t));
+  document.querySelectorAll('.dtab').forEach(d=>d.classList.toggle('on',d.dataset.dt===t));
+  document.querySelector('main').scrollIntoView({behavior:'instant'});
+}
+window.dtab=dtab;
 
 function setPhase(vm,p){ ov(vm).phase=p; saveOV(); const a=ALL.find(x=>x.vm===vm); recompute(a); renderDetail(); }
 function setRating(vm,k,v){ const o=ov(vm); o.ratings=o.ratings||{}; o.ratings[k]=o.ratings[k]===v?0:v; o.ratedAt=new Date().toISOString(); saveOV(); const a=ALL.find(x=>x.vm===vm); recompute(a); renderDetail(); }
@@ -925,11 +1005,17 @@ function openPraes(vm){
   const ns=nextStufe(c.hochr);
   const dimsSorted=Object.entries(c.scores).filter(([k,v])=>v!==null).sort((x,y)=>y[1]-x[1]);
   const staerken={perf:'Starke aktuelle Produktion — dein Motor läuft.',entw:'Deutliche Aufwärtsentwicklung — du wirst messbar besser.',wirt:'Dein Fixum-Pfad ist wirtschaftlich stark.',stab:'Verlässliche Konstanz — auf dich ist Verlass.',potz:'Hoher Zukunftswert — in dich lohnt sich Investition.'};
+  const up=c.deltaPct>=0;
+  document.getElementById('v-praes').classList.add('depot');
   document.getElementById('v-praes').innerHTML=`
-    <button class="praes-exit" onclick="show('detail')">✕ Schließen</button>
-    <div style="max-width:640px;margin:0 auto;padding-top:26px">
-      <p class="mono" style="font-size:12px;letter-spacing:.1em;color:var(--russ-40)">DEIN KURS · ${CFG.anzeigename.toUpperCase()}</p>
-      <h1 style="font-size:30px;font-weight:800;margin:4px 0 18px">${a.name}</h1>
+    ${ROLLE==='ldo'?`<button class="praes-exit" onclick="show('detail')">✕ Schließen</button>`:''}
+    <div style="max-width:640px;margin:0 auto">
+      <div class="depot-hero">
+        <p class="tick">${CFG.anzeigename.toUpperCase()} · ${a.name.toUpperCase()}</p>
+        <p class="nm">Dein Kurs</p>
+        <div class="kurs"><span id="heroKum">0</span><small>€ kumuliert</small></div>
+        <div class="delta ${up?'up':'down'}">${up?'▲ +':'▼ '}${fmt(c.deltaPct)} % ggü. Vorperiode</div>
+      </div>
       <div class="kurschart">
         <div class="kc-top"><span class="kc-monat" id="kcMonat">DEIN WERTUNGSZEITRAUM</span>
         <span class="kc-kum"><span id="kcKum">${fmt(c.kum)}</span> <small>€ kumuliert</small></span></div>
@@ -957,7 +1043,9 @@ function openPraes(vm){
       <div class="card" id="pulsPraesBox" style="display:none"></div>
       <p class="hinweis" style="text-align:center">Diese Ansicht zeigt ausschließlich deine eigenen Daten. Keine Vergleiche, keine Rankings — dein Gegner ist die Stufenleiter.</p>
     </div>`;
-  curVM=vm; show('praes'); setTimeout(()=>{startReplay();},350); loadPuls(a,'pulsPraesBox',true); loadSWPraes(a);
+  curVM=vm; show('praes');
+  setTimeout(()=>{startReplay(); countUp(document.getElementById('heroKum'),c.kum,0,1100);},350);
+  loadPuls(a,'pulsPraesBox',true); loadSWPraes(a);
 }
 window.openPraes=openPraes;
 
@@ -1033,6 +1121,7 @@ async function boot(){
   if(ROLLE!=='ldo'){
     document.querySelector('nav.bottom').style.display='none';
     document.getElementById('btnExport').style.display='none';
+    document.body.style.paddingBottom='0';
     const own=ALL.find(a=>a.vm===MYVM);
     if(own){ openPraes(own.vm); }
     else document.querySelector('main').innerHTML='<div class="card"><p>Dein Zugang ist angelegt, aber noch keinem AGP zugeordnet. Melde dich bei Thomas.</p></div>';
@@ -1510,17 +1599,19 @@ async function renderSWAdmin(){
   const el=document.getElementById('swAdmin'); if(!el)return;
   if(ROLLE!=='ldo'){el.style.display='none';return;}
   const ws=await fetchSW(true);
-  el.innerHTML='<h2 class="sect" style="margin-top:0">Sonderwettbewerbe</h2>'
+  el.innerHTML='<div class="admin-sec"><h3><span class="ico">🏁</span> Sonderwettbewerbe</h3></div>'
    +(ws.length?ws.map(w=>'<div class="rate-row"><div><b style="font-family:var(--font-display)">'+w.name+'</b><div class="hinweis">'+w.beginn+' – '+w.ende+(w.sparte_filter?' · Filter: '+w.sparte_filter:' · alle Sparten')+' · '+(w.metrik==='stueck'?'Stückzahl':'AP in €')+'</div></div>'
-     +'<label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" '+(w.aktiv?'checked':'')+' onchange="swToggle(\''+w.id+'\',this.checked)"> aktiv</label></div>').join(''):'<p class="hinweis">Noch keiner angelegt.</p>')
-   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">'
-   +'<input id="swName" placeholder="Name (z.B. Riester-Endspurt)" style="grid-column:1/-1;padding:9px;border:1px solid var(--linie);border-radius:8px">'
-   +'<input id="swVon" type="date" style="padding:9px;border:1px solid var(--linie);border-radius:8px">'
-   +'<input id="swBis" type="date" style="padding:9px;border:1px solid var(--linie);border-radius:8px">'
-   +'<input id="swFilter" placeholder="Sparten-Filter: riester,rente" style="padding:9px;border:1px solid var(--linie);border-radius:8px">'
-   +'<select id="swMetrik" style="padding:9px;border:1px solid var(--linie);border-radius:8px"><option value="ap">AP in €</option><option value="stueck">Stückzahl</option></select>'
-   +'<button class="btn-primary" style="grid-column:1/-1" onclick="swAdd()">+ Sonderwettbewerb anlegen</button></div>'
-   +'<p class="hinweis" style="margin-top:8px">Filter matcht die Sparten-Bezeichnung der Einzelsätze (Komma-getrennt, Teilbegriffe reichen — „riester" trifft „Riester-Rente"). Leer = alle Sparten. Abgeschaltete Wettbewerbe verschwinden sofort aus allen Ansichten, Daten bleiben erhalten.</p>';
+     +'<label style="display:flex;align-items:center;gap:6px;font-size:13px;white-space:nowrap"><input type="checkbox" '+(w.aktiv?'checked':'')+' onchange="swToggle(\''+w.id+'\',this.checked)"> aktiv</label></div>').join(''):'<p class="hinweis">Noch keiner angelegt.</p>')
+   +'<div class="divider"></div>'
+   +'<p style="font-size:13px;font-weight:700;font-family:var(--font-display);margin-bottom:10px">Neu anlegen</p>'
+   +'<div class="field"><span class="cap">Name</span><input id="swName" placeholder="z.B. Riester-Endspurt"></div>'
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+   +'<div class="field"><span class="cap">Von</span><input id="swVon" type="date"></div>'
+   +'<div class="field"><span class="cap">Bis</span><input id="swBis" type="date"></div></div>'
+   +'<div class="field"><span class="cap">Sparten-Filter (optional)</span><input id="swFilter" placeholder="z.B. riester,rente"></div>'
+   +'<div class="field"><span class="cap">Metrik</span><select id="swMetrik"><option value="ap">AP in €</option><option value="stueck">Stückzahl</option></select></div>'
+   +'<button class="btn-primary" onclick="swAdd()">+ Sonderwettbewerb anlegen</button>'
+   +'<p class="hinweis" style="margin-top:10px">Filter matcht die Sparten-Bezeichnung der Einzelsätze (Komma-getrennt, Teilbegriffe reichen — „riester" trifft „Riester-Rente"). Leer = alle Sparten. Abgeschaltete Wettbewerbe verschwinden sofort aus allen Ansichten, Daten bleiben erhalten.</p>';
 }
 async function renderUserAdmin(){
   const el=document.getElementById('userAdmin'); if(!el)return;
@@ -1528,18 +1619,19 @@ async function renderUserAdmin(){
   const {data:profs,error}=await sb.from('profiles').select('id,name,rolle,vm_nr').order('name');
   if(error){el.innerHTML='<p class="hinweis">Profile nicht ladbar: '+error.message+'</p>';return;}
   const vmOpts=(sel)=>'<option value="">— kein AGP —</option>'+ALL.map(a=>'<option value="'+a.vm+'" '+(sel===a.vm?'selected':'')+'>'+a.name+'</option>').join('');
-  el.innerHTML='<h2 class="sect" style="margin-top:0">Nutzer & Rollen</h2>'
-   +(profs||[]).map(p=>'<div class="rate-row" style="gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:150px"><b style="font-family:var(--font-display);font-size:14px;word-break:break-all">'+(p.name||p.id.slice(0,8))+'</b></div>'
+  el.innerHTML='<div class="admin-sec"><h3><span class="ico">👤</span> Nutzer & Rollen</h3></div>'
+   +(profs&&profs.length?profs.map(p=>'<div class="rate-row" style="gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:150px"><b style="font-family:var(--font-display);font-size:14px;word-break:break-all">'+(p.name||p.id.slice(0,8))+'</b></div>'
      +'<select onchange="updProfil(\''+p.id+'\',\'rolle\',this.value)"><option '+(p.rolle==='ldo'?'selected':'')+' value="ldo">LDO (alles)</option><option '+(p.rolle==='fk'?'selected':'')+' value="fk">Führungskraft</option><option '+(p.rolle==='agp'?'selected':'')+' value="agp">AGP</option></select>'
-     +'<select onchange="updProfil(\''+p.id+'\',\'vm_nr\',this.value)">'+vmOpts(p.vm_nr)+'</select></div>').join('')
-   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">'
-   +'<input id="nuEmail" type="email" placeholder="E-Mail des neuen Nutzers" style="grid-column:1/-1;padding:9px;border:1px solid var(--linie);border-radius:8px">'
-   +'<input id="nuPw" type="text" placeholder="Passwort (min. 6 Zeichen)" style="padding:9px;border:1px solid var(--linie);border-radius:8px">'
-   +'<select id="nuRolle" style="padding:9px;border:1px solid var(--linie);border-radius:8px"><option value="agp">AGP</option><option value="fk">Führungskraft</option><option value="ldo">LDO</option></select>'
-   +'<select id="nuVm" style="grid-column:1/-1;padding:9px;border:1px solid var(--linie);border-radius:8px">'+vmOpts(null)+'</select>'
-   +'<button class="btn-primary" style="grid-column:1/-1" onclick="createUser()">+ Nutzer anlegen</button></div>'
-   +'<p id="nuMsg" class="hinweis" style="margin-top:6px"></p>'
-   +'<p class="hinweis">Selbst-Registrierung ist deaktiviert — nur hier angelegte Nutzer bekommen Zugang. Passwort dem AGP sicher mitteilen (z.B. persönlich); er kann später jederzeit per „Passwort vergessen" ein eigenes setzen.</p>';
+     +'<select onchange="updProfil(\''+p.id+'\',\'vm_nr\',this.value)">'+vmOpts(p.vm_nr)+'</select></div>').join(''):'<p class="hinweis">Noch keine Nutzer.</p>')
+   +'<div class="divider"></div>'
+   +'<p style="font-size:13px;font-weight:700;font-family:var(--font-display);margin-bottom:10px">Neuen Nutzer anlegen</p>'
+   +'<div class="field"><span class="cap">E-Mail</span><input id="nuEmail" type="email" placeholder="name@beispiel.de"></div>'
+   +'<div class="field"><span class="cap">Passwort</span><input id="nuPw" type="text" placeholder="mind. 6 Zeichen"></div>'
+   +'<div class="field"><span class="cap">Rolle</span><select id="nuRolle"><option value="agp">AGP</option><option value="fk">Führungskraft</option><option value="ldo">LDO</option></select></div>'
+   +'<div class="field"><span class="cap">AGP-Zuordnung</span><select id="nuVm">'+vmOpts(null)+'</select></div>'
+   +'<button class="btn-primary" onclick="createUser()">+ Nutzer anlegen</button>'
+   +'<p id="nuMsg" class="hinweis" style="margin-top:8px"></p>'
+   +'<p class="hinweis">Selbst-Registrierung ist deaktiviert — nur hier angelegte Nutzer bekommen Zugang. Passwort sicher mitteilen; der Nutzer kann später ein eigenes setzen.</p>';
 }
 async function createUser(){
   const email=document.getElementById('nuEmail').value.trim();
