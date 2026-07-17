@@ -1532,8 +1532,38 @@ async function renderUserAdmin(){
    +(profs||[]).map(p=>'<div class="rate-row" style="gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:150px"><b style="font-family:var(--font-display);font-size:14px;word-break:break-all">'+(p.name||p.id.slice(0,8))+'</b></div>'
      +'<select onchange="updProfil(\''+p.id+'\',\'rolle\',this.value)"><option '+(p.rolle==='ldo'?'selected':'')+' value="ldo">LDO (alles)</option><option '+(p.rolle==='fk'?'selected':'')+' value="fk">Führungskraft</option><option '+(p.rolle==='agp'?'selected':'')+' value="agp">AGP</option></select>'
      +'<select onchange="updProfil(\''+p.id+'\',\'vm_nr\',this.value)">'+vmOpts(p.vm_nr)+'</select></div>').join('')
-   +'<p class="hinweis" style="margin-top:10px"><b>Neue Nutzer anlegen:</b> Supabase → Authentication → Users → „Create new user" (E-Mail + Passwort, Auto-Confirm an). Der Nutzer erscheint dann hier — Rolle und AGP-Zuordnung vergibst du in dieser Liste. Ohne Zuordnung sieht ein AGP-Login nichts. Selbst-Registrierung ist deaktiviert.</p>';
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">'
+   +'<input id="nuEmail" type="email" placeholder="E-Mail des neuen Nutzers" style="grid-column:1/-1;padding:9px;border:1px solid var(--linie);border-radius:8px">'
+   +'<input id="nuPw" type="text" placeholder="Passwort (min. 6 Zeichen)" style="padding:9px;border:1px solid var(--linie);border-radius:8px">'
+   +'<select id="nuRolle" style="padding:9px;border:1px solid var(--linie);border-radius:8px"><option value="agp">AGP</option><option value="fk">Führungskraft</option><option value="ldo">LDO</option></select>'
+   +'<select id="nuVm" style="grid-column:1/-1;padding:9px;border:1px solid var(--linie);border-radius:8px">'+vmOpts(null)+'</select>'
+   +'<button class="btn-primary" style="grid-column:1/-1" onclick="createUser()">+ Nutzer anlegen</button></div>'
+   +'<p id="nuMsg" class="hinweis" style="margin-top:6px"></p>'
+   +'<p class="hinweis">Selbst-Registrierung ist deaktiviert — nur hier angelegte Nutzer bekommen Zugang. Passwort dem AGP sicher mitteilen (z.B. persönlich); er kann später jederzeit per „Passwort vergessen" ein eigenes setzen.</p>';
 }
+async function createUser(){
+  const email=document.getElementById('nuEmail').value.trim();
+  const pw=document.getElementById('nuPw').value;
+  const rolle=document.getElementById('nuRolle').value;
+  const vm_nr=document.getElementById('nuVm').value||null;
+  const msg=document.getElementById('nuMsg');
+  if(!email||pw.length<6){msg.textContent='E-Mail und Passwort (min. 6 Zeichen) angeben.';return;}
+  msg.textContent='Lege an …';
+  const {data:{session}}=await sb.auth.getSession();
+  try{
+    const res=await fetch(SB_URL+'/functions/v1/admin-create-user',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':SB_KEY},
+      body:JSON.stringify({email,password:pw,rolle,vm_nr})
+    });
+    const j=await res.json();
+    if(!res.ok){msg.textContent='Fehler: '+(j.error||res.status);return;}
+    msg.textContent='✓ Nutzer angelegt: '+email;
+    document.getElementById('nuEmail').value='';document.getElementById('nuPw').value='';
+    renderUserAdmin();
+  }catch(e){msg.textContent='Fehler: '+e.message+' — ist die Edge Function „admin-create-user" deployed?';}
+}
+window.createUser=createUser;
 async function updProfil(id,field,val){
   const upd={}; upd[field]=val||null;
   const {error}=await sb.from('profiles').update(upd).eq('id',id);
