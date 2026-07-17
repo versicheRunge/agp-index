@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AGP Index · LDO Ostholstein</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ============ RDL v4.0 Tokens ============ */
+:root{
+  --kalk:#EFEDE6; --kalk-tief:#E4E1D6; --russ:#1A1816; --russ-70:#4A4640; --russ-40:#8B867C;
+  --signal:#0E5A46; --signal-hell:#DCE9E2;
+  --amber:#B07A1E; --amber-hell:#F3E7CF;
+  --alarm:#A63A26; --alarm-hell:#F0DCD6;
+  --linie:#D6D2C6;
+  --font-display:'Bricolage Grotesque',sans-serif;
+  --font-body:'Source Serif 4',serif;
+  --font-mono:'Space Mono',monospace;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--kalk);color:var(--russ);font-family:var(--font-body);font-size:16px;line-height:1.5;padding-bottom:76px}
+h1,h2,h3,.disp{font-family:var(--font-display)}
+.mono{font-family:var(--font-mono)}
+button{font-family:var(--font-display);cursor:pointer;border:none;background:none;color:inherit}
+select,input{font-family:var(--font-body);font-size:15px}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2.5px solid var(--signal);outline-offset:2px;border-radius:4px}
+
+/* ============ Layout ============ */
+header{position:sticky;top:0;z-index:20;background:var(--kalk);border-bottom:1px solid var(--linie);padding:14px 18px;display:flex;align-items:baseline;justify-content:space-between}
+.wordmark{font-family:var(--font-mono);font-weight:700;font-size:17px;letter-spacing:.06em}
+.wordmark .tick{color:var(--signal)}
+.stand{font-family:var(--font-mono);font-size:11px;color:var(--russ-40)}
+main{max-width:1080px;margin:0 auto;padding:18px}
+nav.bottom{position:fixed;bottom:0;left:0;right:0;z-index:20;background:var(--russ);display:flex;padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+nav.bottom button{flex:1;color:var(--kalk-tief);font-size:12px;font-weight:600;padding:10px 4px;border-radius:8px;letter-spacing:.02em}
+nav.bottom button.on{background:var(--kalk);color:var(--russ)}
+.view{display:none}.view.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ============ Cards & Chips ============ */
+.card{background:#fff;border:1px solid var(--linie);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:720px){.grid4{grid-template-columns:1fr 1fr}}
+.kpi .lbl{font-family:var(--font-display);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--russ-40)}
+.kpi .val{font-family:var(--font-mono);font-size:30px;font-weight:700;line-height:1.15;margin-top:4px}
+.kpi .sub{font-size:13px;color:var(--russ-70);margin-top:2px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:11.5px;padding:3px 9px;border-radius:99px;border:1px solid var(--linie);background:var(--kalk)}
+.chip.pos{background:var(--signal-hell);border-color:var(--signal);color:var(--signal)}
+.chip.neg{background:var(--amber-hell);border-color:var(--amber);color:var(--amber)}
+.chip.alarm{background:var(--alarm-hell);border-color:var(--alarm);color:var(--alarm)}
+.chip.neutral{color:var(--russ-70)}
+.badge-dq{font-family:var(--font-display);font-size:11px;font-weight:600;letter-spacing:.03em;padding:2px 8px;border-radius:4px;background:var(--kalk-tief);color:var(--russ-70)}
+h2.sect{font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin:22px 0 10px;color:var(--russ-70)}
+
+/* ============ AGP-Liste ============ */
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.toolbar input,.toolbar select{padding:9px 12px;border:1px solid var(--linie);border-radius:8px;background:#fff;flex:1;min-width:140px}
+.agp-card{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
+.agp-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(26,24,22,.08)}
+.agp-card .name{font-family:var(--font-display);font-weight:600;font-size:16.5px}
+.agp-card .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.agp-card .idx{font-family:var(--font-mono);font-weight:700;font-size:26px;text-align:right}
+.agp-card .delta{font-family:var(--font-mono);font-size:12.5px;text-align:right}
+.delta.up{color:var(--signal)}.delta.down{color:var(--amber)}
+.spark{grid-column:1/-1;margin-top:4px}
+
+/* ============ Detail ============ */
+.back{font-weight:600;font-size:14px;color:var(--russ-70);margin-bottom:12px;display:inline-flex;align-items:center;gap:6px}
+.detail-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.detail-head h1{font-size:26px;font-weight:800;line-height:1.15}
+.idx-big{font-family:var(--font-mono);font-weight:700;font-size:44px;line-height:1;text-align:right}
+.idx-big small{display:block;font-size:11px;font-weight:400;color:var(--russ-40);letter-spacing:.05em;margin-top:3px}
+
+/* Kurs-Chart (das laute Element) */
+.kurschart{background:var(--russ);border-radius:var(--r);padding:18px 16px 12px;margin:14px 0;color:var(--kalk)}
+.kurschart .kc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.kurschart .kc-monat{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;color:#B9B4A8}
+.kurschart .kc-kum{font-family:var(--font-mono);font-weight:700;font-size:26px}
+.kurschart .kc-kum small{font-size:12px;font-weight:400;color:#B9B4A8}
+.kurschart svg{width:100%;height:auto;display:block}
+.kc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.kc-stufe{font-family:var(--font-mono);font-size:12.5px;color:#B9B4A8}
+.kc-stufe b{color:var(--kalk)}
+.btn-replay{background:var(--kalk);color:var(--russ);font-weight:700;font-size:13px;padding:8px 16px;border-radius:99px;letter-spacing:.02em}
+.btn-replay:active{transform:scale(.97)}
+
+/* Fixum-Cockpit */
+.cockpit .row{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:14px;margin-bottom:6px}
+.cockpit .row .l{color:var(--russ-70);font-family:var(--font-body)}
+.pbar{height:14px;background:var(--kalk-tief);border-radius:99px;overflow:hidden;margin:10px 0 6px;position:relative}
+.pbar .fill{height:100%;background:var(--signal);border-radius:99px;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.pbar .fill.warn{background:var(--amber)}
+.pbar .fill.alarm{background:var(--alarm)}
+.pbar-lbl{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11px;color:var(--russ-40)}
+.stufen{display:flex;gap:3px;margin-top:12px}
+.stufen .st{flex:1;height:26px;border-radius:4px;background:var(--kalk-tief);position:relative;transition:background .3s}
+.stufen .st.done{background:var(--signal)}
+.stufen .st.cur{background:var(--signal);box-shadow:0 0 0 2.5px var(--russ)}
+.stufen-lbl{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px;color:var(--russ-40);margin-top:4px}
+.nextgoal{margin-top:12px;padding:12px;background:var(--signal-hell);border-radius:8px;font-size:14.5px}
+.nextgoal b{font-family:var(--font-display)}
+.nextgoal.alarm{background:var(--alarm-hell)}
+
+/* Dimensionen */
+.dim{margin-bottom:12px}
+.dim .top{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:4px}
+.dim .top .w{font-family:var(--font-mono);font-size:11px;color:var(--russ-40)}
+.dim .bar{height:9px;background:var(--kalk-tief);border-radius:99px;overflow:hidden}
+.dim .bar i{display:block;height:100%;border-radius:99px;background:var(--russ);transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.dim.inaktiv{opacity:.45}
+.dim .score{font-family:var(--font-mono);font-weight:700}
+
+/* Bewertung */
+.rate-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--linie)}
+.rate-row:last-child{border-bottom:none}
+.stars{display:flex;gap:4px}
+.stars button{width:32px;height:32px;border-radius:6px;background:var(--kalk-tief);font-family:var(--font-mono);font-weight:700;font-size:14px;color:var(--russ-40)}
+.stars button.on{background:var(--russ);color:var(--kalk)}
+.impuls{padding:12px 14px;background:var(--kalk);border-left:3px solid var(--russ);border-radius:0 8px 8px 0;font-size:14.5px;margin-bottom:8px}
+
+/* Portfolio */
+.matrix-wrap{background:#fff;border:1px solid var(--linie);border-radius:var(--r);padding:10px}
+.matrix-wrap svg{width:100%;height:auto}
+.legende{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--russ-70);margin-top:8px;padding:0 6px 6px}
+
+/* Vergleich */
+.vgl-pick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.vgl-pick button{padding:7px 13px;border:1.5px solid var(--linie);border-radius:99px;font-size:13px;font-weight:600;background:#fff}
+.vgl-pick button.on{background:var(--russ);color:var(--kalk);border-color:var(--russ)}
+.vgl-dim{margin-bottom:16px}
+.vgl-dim h4{font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--russ-70);margin-bottom:6px}
+.vgl-bar{display:grid;grid-template-columns:110px 1fr 46px;gap:8px;align-items:center;margin-bottom:5px;font-size:13px}
+.vgl-bar .b{height:10px;background:var(--kalk-tief);border-radius:99px;overflow:hidden}
+.vgl-bar .b i{display:block;height:100%;border-radius:99px}
+.vgl-bar .v{font-family:var(--font-mono);text-align:right;font-size:12px}
+
+/* Präsentationsmodus */
+.praes .card{border:none;box-shadow:0 4px 20px rgba(26,24,22,.06)}
+.praes-exit{position:fixed;top:14px;right:14px;z-index:30;background:var(--russ);color:var(--kalk);padding:8px 14px;border-radius:99px;font-weight:700;font-size:13px}
+.staerke{display:flex;gap:10px;align-items:baseline;padding:8px 0;font-size:15.5px}
+.staerke .n{font-family:var(--font-mono);font-weight:700;color:var(--signal)}
+
+.hinweis{font-size:12.5px;color:var(--russ-40);margin-top:14px;line-height:1.45}
+.mover{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--linie);cursor:pointer}
+.mover:last-child{border-bottom:none}
+.mover .nm{font-weight:600;font-size:14.5px;font-family:var(--font-display)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---- Login & Import (Welle 1) ---- */
+.overlay{position:fixed;inset:0;z-index:50;background:var(--kalk);display:flex;align-items:center;justify-content:center;padding:24px}
+.login-box{max-width:380px;width:100%;text-align:center}
+.login-box .wordmark{font-size:22px;margin-bottom:6px}
+.login-box p{color:var(--russ-70);font-size:14.5px;margin-bottom:18px}
+.login-box input{width:100%;padding:13px;border:1.5px solid var(--linie);border-radius:10px;font-size:16px;margin-bottom:10px;background:#fff}
+.btn-primary{width:100%;background:var(--russ);color:var(--kalk);font-weight:700;font-size:15px;padding:13px;border-radius:10px}
+.btn-primary:disabled{opacity:.5}
+.drop{border:2px dashed var(--linie);border-radius:var(--r);padding:26px 16px;text-align:center;background:#fff;color:var(--russ-70);font-size:14.5px;margin-bottom:12px}
+.drop b{font-family:var(--font-display);color:var(--russ)}
+.drop input{display:none}
+.imp-table{width:100%;border-collapse:collapse;font-size:13px}
+.imp-table th,.imp-table td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--linie)}
+.imp-table td.mono,.imp-table th.mono{font-family:var(--font-mono);text-align:right}
+.status-ok{color:var(--signal);font-weight:700}
+.status-warn{color:var(--amber);font-weight:700}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="wordmark">AGP<span class="tick">▲</span>INDEX</div>
+    <div class="stand" id="standLbl">Stand: 30. Juni 2026 · Wertungsblatt</div>
+  </div>
+  <button class="chip neutral" id="btnExport" title="JSON-Export">⤓ Export</button>
+</header>
+
+<main>
+  <!-- ============ DASHBOARD ============ -->
+  <section class="view on" id="v-dash">
+    <div class="grid4">
+      <div class="card kpi"><div class="lbl">Ø Index</div><div class="val" id="k-avg">–</div><div class="sub" id="k-avg-sub"></div></div>
+      <div class="card kpi"><div class="lbl">Auf Kurs Höchststufe</div><div class="val" id="k-max">–</div><div class="sub">von <span id="k-total"></span> AGP</div></div>
+      <div class="card kpi"><div class="lbl">Stärkstes Momentum</div><div class="val" id="k-mom" style="font-size:19px">–</div><div class="sub" id="k-mom-sub"></div></div>
+      <div class="card kpi"><div class="lbl">Warnungen</div><div class="val" id="k-warn">–</div><div class="sub">Pfad kritisch / Rückzahlung</div></div>
+    </div>
+    <h2 class="sect">Movers des Monats</h2>
+    <div class="card" id="movers"></div>
+    <h2 class="sect">Fixum-Pfad-Verteilung</h2>
+    <div class="card">
+      <div class="pbar" style="display:flex;gap:2px;background:none;height:auto" id="ampelBar"></div>
+      <div class="legende"><span>● <b style="color:var(--signal)">Grün</b> Höchststufe gesichert</span><span>● <b style="color:var(--amber)">Amber</b> auf dem Weg</span><span>● <b style="color:var(--alarm)">Rot</b> kritisch</span></div>
+    </div>
+  </section>
+
+  <!-- ============ KURSE / LISTE ============ -->
+  <section class="view" id="v-liste">
+    <div class="toolbar">
+      <input type="search" id="q" placeholder="AGP suchen …" aria-label="AGP suchen">
+      <select id="sortSel" aria-label="Sortierung">
+        <option value="index">Sortierung: Index</option>
+        <option value="delta">Sortierung: Entwicklung</option>
+        <option value="kum">Sortierung: Kumulierte AP</option>
+        <option value="name">Sortierung: Name</option>
+      </select>
+    </div>
+    <div id="liste"></div>
+  </section>
+
+  <!-- ============ DETAIL ============ -->
+  <section class="view" id="v-detail"></section>
+
+  <!-- ============ PORTFOLIO ============ -->
+  <section class="view" id="v-portfolio">
+    <h2 class="sect" style="margin-top:0">Portfolio-Matrix</h2>
+    <div class="matrix-wrap"><svg id="matrixSvg" viewBox="0 0 700 520" role="img" aria-label="Portfolio-Matrix aller Agenturpartner"></svg>
+    <div class="legende"><span>X: Gesamtindex</span><span>Y: Momentum (Δ 3M-Provision)</span><span>Größe: kumulierte AP</span></div></div>
+    <p class="hinweis">Quadranten: rechts oben <b>Stars</b> · links oben <b>Zukunftswerte</b> · rechts unten <b>stabile Leistungsträger</b> · links unten <b>Entwicklungsfälle</b>. Antippen öffnet die Detailseite.</p>
+  </section>
+
+  <!-- ============ VERGLEICH ============ -->
+  <section class="view" id="v-vergleich">
+    <h2 class="sect" style="margin-top:0">Vergleich (2–4 AGP wählen)</h2>
+    <div class="vgl-pick" id="vglPick"></div>
+    <div id="vglOut"></div>
+  </section>
+
+  <!-- ============ IMPORT ============ -->
+  <section class="view" id="v-import">
+    <h2 class="sect" style="margin-top:0">Import-Center</h2>
+    <label class="drop" id="dropWB">
+      <b>Wertungsblatt</b> (AGP_Datenblatt_*.xlsx) hierher ziehen oder tippen<br>
+      <span style="font-size:12.5px">Monatlich · Backfill möglich · inkl. Einzelsätze & Sonderverrechnung</span>
+      <input type="file" accept=".xlsx" onchange="importWB(this.files[0])">
+    </label>
+    <label class="drop" id="dropWE">
+      <b>Wettbewerb</b> (Wettbewerb_Agenturpartner_*.xlsx)<br>
+      <span style="font-size:12.5px">Monatlich · liefert Eintrittsdatum & Rang-Historie</span>
+      <input type="file" accept=".xlsx" onchange="importWE(this.files[0])">
+    </label>
+    <label class="drop" id="dropTS">
+      <b>Tagesstatistik</b> (Tagestatistik_*.xlsx)<br>
+      <span style="font-size:12.5px">Täglich · Upsert auf den laufenden Monat · speist Welle 4 (Puls & Heatmap)</span>
+      <input type="file" accept=".xlsx" onchange="importTS(this.files[0])">
+    </label>
+    <div id="impOut"></div>
+    <div class="card" id="seedCard" style="display:none">
+      <p style="font-size:14.5px;margin-bottom:10px">Datenbank ist leer. Du kannst die <b>22 AGP vom Stand 30.06.2026</b> als Startbestand einspielen:</p>
+      <button class="btn-primary" onclick="seedDB()">Startbestand (Juni 2026) einspielen</button>
+    </div>
+  </section>
+
+  <!-- ============ PRÄSENTATION ============ -->
+  <section class="view praes" id="v-praes"></section>
+</main>
+
+<div class="overlay" id="loginOverlay" style="display:none">
+  <div class="login-box">
+    <div class="wordmark">AGP<span class="tick">▲</span>INDEX</div>
+    <p>Melde dich mit deiner E-Mail an.<br>Du bekommst einen Login-Link — kein Passwort nötig.</p>
+    <input type="email" id="loginEmail" placeholder="deine@mail.de" autocomplete="email">
+    <button class="btn-primary" id="btnLogin" onclick="sendLink()">Login-Link senden</button>
+    <p id="loginMsg" style="margin-top:12px;min-height:20px"></p>
+  </div>
+</div>
+
+<nav class="bottom" aria-label="Hauptnavigation">
+  <button data-v="dash" class="on">Dashboard</button>
+  <button data-v="liste">Kurse</button>
+  <button data-v="portfolio">Portfolio</button>
+  <button data-v="vergleich">Vergleich</button>
+  <button data-v="import" id="navImport">Import</button>
+</nav>
+
+<script>
+/* =====================================================================
+   AGP INDEX · MVP · Echtdaten Wertungsblatt Stand 30.06.2026
+   Berechnungsmodell gem. Konzept Phase 1–3 (validiert 22/22)
+   Persistenz: LocalStorage (V1) · Supabase-ready Datenstruktur
+===================================================================== */
+
+/* ---------- Konfiguration ---------- */
+const CFG = {
+  zielpfadMonat: 3175,
+  jahresziel: 38100,
+  benchmarkErfahren: 5000,
+  gewichte: { perf:.35, entw:.25, wirt:.25, stab:.10, potz:.05 },
+  phasenFaktor: { onboarding:null, aufbau:.6, entwicklung:.85, etabliert:1, top:1, stabilisierung:1, sanierung:1 },
+  phasenLabel: { onboarding:'Onboarding', aufbau:'Aufbauphase', entwicklung:'Entwicklungsphase', etabliert:'Etabliert', top:'Top-Performer', stabilisierung:'Stabilisierung', sanierung:'Sanierungsphase' },
+  anzeigename: localStorage.getItem('agpx_name') || 'AGP Index'
+};
+const STAFFEL = [[4500,550],[5700,1050],[6900,1125],[8100,1200],[9300,1275],[10500,1350],[11700,1425],[12900,1500],[14100,1575],[15300,1650],[16500,1725],[17700,1800],[18900,1875],[20100,1950],[21300,2025],[22500,2100],[23700,2175],[24900,2250],[26100,2325],[27300,2400],[28500,2475],[29700,2550],[30900,2625],[32100,2700],[33300,2775],[34500,2850],[35700,2925],[36900,3000],[38100,3050]];
+
+/* ---------- Echtdaten (Import Wertungsblatt 30.06.2026) ---------- */
+const SEED = [
+{vm:"1313-05",name:"Marco Plöger",wb:"2025-10-01",monate:["Okt","Nov","Dez","Jan","Feb","Mär","Apr","Mai","Jun"],m:[79.62,0,1530.69,712.54,1178.72,2438.29,-81.55,2093.19,2265.03],fixA:3050,fixF:1500,uv:0,rz:0},
+{vm:"2214-07",name:"Marec-Marcel Lüchau",wb:"2026-02-01",monate:["Feb","Mär","Apr","Mai","Jun"],m:[249.78,620.40,91.56,76.21,251.99],fixA:1600,fixF:0,uv:-1562.40,rz:130.20},
+{vm:"0054-16",name:"Anna Ulrich",wb:"2026-02-01",monate:["Feb","Mär","Apr","Mai","Jun"],m:[41.99,0,2473.07,6746.02,1446.26],fixA:1600,fixF:2250,uv:0,rz:0},
+{vm:"0066-13",name:"Paulina Alcaza",wb:"2026-02-01",monate:["Feb","Mär","Apr","Mai","Jun"],m:[0,879.88,422.33,842.06,513.78],fixA:1600,fixF:1050,uv:-1034.06,rz:86.17},
+{vm:"0065-09",name:"Lorenzo Gradisca",wb:"2026-02-01",monate:["Feb","Mär","Apr","Mai","Jun"],m:[0,0,843.88,2635.55,3392.31],fixA:1600,fixF:1650,uv:0,rz:0},
+{vm:"0056-07",name:"Vivien Siegert",wb:"2025-08-01",monate:["Aug","Sep","Okt","Nov","Dez","Jan","Feb","Mär","Apr","Mai","Jun"],m:[171.77,442.53,2998.33,4052.01,1606.88,314.64,2705.75,1476.84,2735.88,3229.77,3841.35],fixA:1500,fixF:2250,uv:0,rz:0},
+{vm:"0164-12",name:"Adrian Schmidt",wb:"2025-08-01",monate:["Aug","Sep","Okt","Nov","Dez","Jan","Feb","Mär","Apr","Mai","Jun"],m:[0,0,719.66,4429.44,2085.14,7.79,1333.79,2558.17,4487.60,1917.71,5782.43],fixA:1500,fixF:2250,uv:0,rz:0},
+{vm:"0252-09",name:"Eva-Maria Gabriel",wb:"2026-02-01",monate:["Feb","Mär","Apr","Mai","Jun"],m:[3919.16,3766.74,3475.41,1617.04,3997.72],fixA:3050,fixF:3050,uv:0,rz:0},
+{vm:"0274-06",name:"Michel Lazar",sv:-373.94,wb:"2026-02-01",monate:["Feb","Mär","Apr","Mai","Jun"],m:[3099.22,3236.50,4085.32,6176.20,6411.35],fixA:3000,fixF:3050,uv:0,rz:0},
+{vm:"0553-04",name:"Antje Krause",wb:"2026-02-01",monate:["Feb","Mär","Apr","Mai","Jun"],m:[372.99,136.64,170.80,174.45,1195.82],fixA:1350,fixF:550,uv:0,rz:0},
+{vm:"0182-07",name:"Bastian Zandeck",wb:"2026-02-01",eintritt:"2024-08-01",monate:["Feb","Mär","Apr","Mai","Jun"],m:[3932.55,5200.80,5280.27,5650.29,6128.34],fixA:3050,fixF:3050,uv:0,rz:0},
+{vm:"0070-14",name:"Niko Maßmann",wb:"2026-02-01",eintritt:"2024-02-01",monate:["Feb","Mär","Apr","Mai","Jun"],m:[8478.78,4663.04,17325.43,8110.47,12599.17],fixA:3050,fixF:3050,uv:0,rz:0},
+{vm:"0053-10",name:"Jan Zimmermann",wb:"2025-09-01",eintritt:"2023-09-01",monate:["Sep","Okt","Nov","Dez","Jan","Feb","Mär","Apr","Mai","Jun"],m:[631.91,1539.65,3429.87,-586.59,10563.64,-224.83,4348.19,5598.37,3145.17,5746.66],fixA:3050,fixF:3050,uv:0,rz:0},
+{vm:"1825-14",name:"Jenny Rades",sv:-543.85,wb:"2026-03-01",monate:["Mär","Apr","Mai","Jun"],m:[3393.10,1219.10,1742.69,4170.55],fixA:2250,fixF:2550,uv:0,rz:0},
+{vm:"0083-07",name:"Marie Kröger",wb:"2025-09-01",monate:["Sep","Okt","Nov","Dez","Jan","Feb","Mär","Apr","Mai","Jun"],m:[2328.23,2479.14,3228.13,3413.11,4296.34,3061.83,5650.62,3004.54,2431.40,1398.73],fixA:2475,fixF:3000,uv:0,rz:0},
+{vm:"0281-05",name:"Tora Dryba",sv:-4727.45,wb:"2026-03-01",monate:["Mär","Apr","Mai","Jun"],m:[4172.28,3369.00,1218.73,339.26],fixA:1725,fixF:1500,uv:0,rz:0},
+{vm:"0245-07",name:"René Behlke",wb:"2025-12-01",monate:["Dez","Jan","Feb","Mär","Apr","Mai","Jun"],m:[409.69,314.91,1242.43,588.01,-377.04,681.93,-223.95],fixA:550,fixF:550,uv:0,rz:0},
+{vm:"0085-10",name:"Cornelia Kleingarn",wb:"2025-08-01",monate:["Aug","Sep","Okt","Nov","Dez","Jan","Feb","Mär","Apr","Mai","Jun"],m:[2934.86,2944.67,4526.00,1143.07,4070.00,8189.81,2461.26,4873.09,5009.20,1754.09,2511.48],fixA:3000,fixF:3050,uv:0,rz:0},
+{vm:"0922-12",name:"Mona Menzel",wb:"2026-01-01",monate:["Jan","Feb","Mär","Apr","Mai","Jun"],m:[2661.29,1440.22,4289.16,2247.08,2107.93,4505.04],fixA:2475,fixF:2850,uv:0,rz:0},
+{vm:"0264-03",name:"Leo Schäfer",sv:-5698.62,wb:"2025-09-01",monate:["Sep","Okt","Nov","Dez","Jan","Feb","Mär","Apr","Mai","Jun"],m:[2479.48,2702.51,1066.65,1875.55,3286.81,1271.08,2044.99,3146.96,2226.43,2574.58],fixA:2850,fixF:1950,uv:0,rz:0},
+{vm:"0220-03",name:"Anne-Marie Reich-Dultz",wb:"2025-09-01",monate:["Sep","Okt","Nov","Dez","Jan","Feb","Mär","Apr","Mai","Jun"],m:[6748.40,5529.74,4207.34,4088.17,3027.48,7236.59,3258.87,5623.88,4925.91,3673.84],fixA:3050,fixF:3050,uv:0,rz:0},
+{vm:"2218-07",name:"Klaus Häusgen",wb:"2026-01-01",monate:["Jan","Feb","Mär","Apr","Mai","Jun"],m:[1486.42,1346.20,1715.76,4041.27,1104.27,2194.60],fixA:1250,fixF:2175,uv:0,rz:0}
+];
+
+/* ---------- Overrides (LocalStorage) ---------- */
+const OV = JSON.parse(localStorage.getItem('agpx_ov')||'{}');
+function saveOV(){ localStorage.setItem('agpx_ov', JSON.stringify(OV)); }
+function ov(vm){ return OV[vm] = OV[vm] || {}; }
+
+/* ---------- Berechnungen ---------- */
+const avg=a=>a.reduce((s,x)=>s+x,0)/a.length;
+const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
+const fmt=n=>Math.round(n).toLocaleString('de-DE');
+const fmt1=n=>n.toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1});
+
+function lookupFixum(h){ let f=0; for(const [s,v] of STAFFEL) if(h>=s) f=v; return f; }
+function nextStufe(h){ for(const [s,v] of STAFFEL) if(h<s) return {schwelle:s,fixum:v}; return null; }
+
+function piecewise(x,pts){
+  if(x<=pts[0][0]) return pts[0][1];
+  for(let i=1;i<pts.length;i++){ const [x0,y0]=pts[i-1],[x1,y1]=pts[i];
+    if(x<=x1) return y0+(x-x0)/(x1-x0)*(y1-y0); }
+  return pts[pts.length-1][1];
+}
+
+function phaseOf(a){
+  const o=ov(a.vm);
+  if(o.phase) return o.phase;
+  if(a.eintritt){
+    const mon=(new Date('2026-06-30')-new Date(a.eintritt))/2629800000;
+    if(mon<6) return 'onboarding'; if(mon<18) return 'aufbau';
+    if(mon<36) return 'entwicklung'; return 'etabliert';
+  }
+  return 'etabliert';
+}
+
+function compute(a){
+  const m=a.m, n=m.length, o=ov(a.vm);
+  const phase=phaseOf(a), f=CFG.phasenFaktor[phase]??1;
+  const prod=m.reduce((s,x)=>s+x,0);
+  const sv=a.sv||0;
+  const kum=prod+sv;               // wertungsrelevant (inkl. Sonderverrechnung)
+  const hochr=kum/n*12, quote=hochr/CFG.jahresziel;
+  const fixF=lookupFixum(hochr);
+  const flagAlarm = a.uv<0 || a.rz>0;
+
+  /* Performance */
+  const p3=avg(m.slice(-Math.min(3,n)));
+  const Z=CFG.zielpfadMonat*(f||1);
+  const perf=piecewise(p3,[[0,0],[Z*.5,35],[Z,70],[CFG.benchmarkErfahren*(f||1),85],[8000*(f||1),100]]);
+
+  /* Entwicklung */
+  let sa=null, sb=null;
+  if(n>=4){
+    const cur=avg(m.slice(-3));
+    const prevArr=m.slice(Math.max(0,n-6),n-3);
+    const prev=avg(prevArr);
+    const d=(cur-prev)/Math.max(prev,CFG.zielpfadMonat*.25);
+    sa=clamp(50+d*125,0,100);
+  }
+  if(n>=3){
+    const xs=[...m.keys()],xm=avg(xs),ym=avg(m);
+    const slope=xs.reduce((s,x,i)=>s+(x-xm)*(m[i]-ym),0)/xs.reduce((s,x)=>s+(x-xm)**2,0);
+    sb=clamp(50+(slope/CFG.zielpfadMonat)*250,0,100);
+  }
+  const entwParts=[sa,sb].filter(v=>v!==null);
+  const entw=entwParts.length?avg(entwParts):null;
+  const deltaPct = n>=4 ? ((avg(m.slice(-3))-avg(m.slice(Math.max(0,n-6),n-3)))/Math.max(avg(m.slice(Math.max(0,n-6),n-3)),CFG.zielpfadMonat*.25))*100 : 0;
+
+  /* Wirtschaftlichkeit */
+  let wirt=piecewise(quote,[[0,0],[.118,10],[.5,40],[1,80],[2,100]]);
+  if(flagAlarm) wirt=Math.min(wirt,15);
+
+  /* Stabilität */
+  let stab=null;
+  if(n>=3){
+    const mn=avg(m), sd=Math.sqrt(avg(m.map(x=>(x-mn)**2)));
+    const cv=mn>0?sd/mn:2;
+    stab=piecewise(cv,[[0,100],[.15,100],[.30,80],[.50,55],[.75,30],[1.2,10]]);
+    const nullm=m.filter(x=>x<0.1*Z).length;
+    stab=clamp(stab-nullm*10,0,100);
+    var cvOut=cv;
+  }
+
+  /* Potenzial (manuell) */
+  const r=o.ratings||{}; const rv=Object.values(r).filter(v=>v>0);
+  const potz=rv.length? avg(rv)*20 : null;
+
+  /* Neugewichtung */
+  const scores={perf,entw,wirt,stab,potz};
+  const active=Object.entries(scores).filter(([k,v])=>v!==null);
+  const wsum=active.reduce((s,[k])=>s+CFG.gewichte[k],0);
+  const index=active.reduce((s,[k,v])=>s+v*CFG.gewichte[k],0)/wsum;
+
+  /* Labels */
+  const dq = n>=6?'hoch':n>=3?'ausreichend':n>=2?'eingeschränkt':'unzureichend';
+  const vola = cvOut===undefined?'–':cvOut<=.15?'sehr stabil':cvOut<=.30?'stabil':cvOut<=.50?'wechselhaft':cvOut<=.75?'volatil':'sehr volatil';
+  const mom = deltaPct>=20?'stark positiv':deltaPct>=5?'positiv':deltaPct>-5?'seitwärts':deltaPct>-20?'negativ':'stark negativ';
+
+  /* Rating (nur intern) */
+  let rating;
+  if(dq==='eingeschränkt'||dq==='unzureichend') rating='Beobachten (vorläufig)';
+  else if(flagAlarm && index<40) rating='Sanieren';
+  else if(index>=75 && deltaPct>-5) rating='Investieren';
+  else if(index>=55 && deltaPct>=5) rating='Entwickeln';
+  else if(index>=55) rating='Halten';
+  else if(index>=40) rating='Beobachten';
+  else if(deltaPct>-5) rating='Stabilisieren';
+  else rating='Sanieren';
+
+  /* Coaching-Impulse */
+  const imp=[];
+  const rest=Math.max(0,CFG.jahresziel-kum), restM=12-n;
+  if(quote<0.5&&restM>0) imp.push(`Fixum-Pfad kritisch. Restbedarf für Höchststufe: Ø ${fmt(rest/restM)} €/Monat über ${restM} Monate. Konkrete Zwischenziele definieren.`);
+  if(perf>=70&&stab!==null&&stab<45) imp.push('Starke Leistung, aber schwankend. Einreichungskonstanz und Wochenroutinen als nächster Hebel.');
+  if(stab!==null&&stab>=70&&perf<50) imp.push(`Solide Konstanz vorhanden. Hebel: Terminmenge und Abschlussroutine — nächste Fixum-Stufe: noch ${nextStufe(hochr)?fmt(Math.max(0,nextStufe(hochr).schwelle-hochr)/12*restM||0):'0'} € AP.`);
+  if(entw!==null&&entw>=70&&perf<60) imp.push('Deutliches Wachstum erkennbar. Momentum halten — jetzt zählt Wiederholbarkeit, nicht Ausnahme.');
+  if(flagAlarm) imp.push('Unterverdienst/Rückzahlung aktiv. Sofortgespräch: Ursachen, Zeitfenster, wöchentliche Messpunkte.');
+  if(potz!==null&&potz>=80&&perf<50) imp.push('Hoher Zukunftswert bei niedriger Leistung. Coachinginvestition lohnt, solange Entwicklung messbar bleibt.');
+  if(!imp.length) imp.push('Kurs stabil. Fokus halten und Erfolgsmuster dokumentieren — was funktioniert, skalieren.');
+
+  return {phase,f,prod,sv,kum,hochr,quote,fixF,flagAlarm,p3,scores,active:active.map(([k])=>k),wsum,index,dq,vola,mom,deltaPct,rating,imp,cv:cvOut,n};
+}
+
+let ALL = [];
+function recompute(a){ a.c=compute(a); }
+
+/* ---------- SVG-Helfer ---------- */
+function sparkSVG(m,w=560,h=54){
+  const mx=Math.max(...m,1), mn=Math.min(...m,0);
+  const pts=m.map((v,i)=>[8+i*(w-16)/Math.max(m.length-1,1), h-6-((v-mn)/(mx-mn||1))*(h-14)]);
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const zero = mn<0 ? h-6-((0-mn)/(mx-mn))*(h-14) : null;
+  return `<svg viewBox="0 0 ${w} ${h}" class="spark" aria-hidden="true" style="width:100%;height:${h}px">
+    ${zero?`<line x1="8" y1="${zero}" x2="${w-8}" y2="${zero}" stroke="var(--linie)" stroke-dasharray="3 4"/>`:''}
+    <path d="${d}" fill="none" stroke="var(--russ)" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="${pts[pts.length-1][0]}" cy="${pts[pts.length-1][1]}" r="3.5" fill="var(--signal)"/></svg>`;
+}
+
+/* ---------- Navigation ---------- */
+const views={dash:'v-dash',liste:'v-liste',detail:'v-detail',portfolio:'v-portfolio',vergleich:'v-vergleich',praes:'v-praes',import:'v-import'};
+function show(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));
+  document.getElementById(views[v]).classList.add('on');
+  document.querySelectorAll('nav.bottom button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  window.scrollTo(0,0);
+  if(v==='dash') renderDash();
+  if(v==='liste') renderListe();
+  if(v==='portfolio') renderMatrix();
+  if(v==='vergleich') renderVglPick();
+}
+document.querySelectorAll('nav.bottom button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+
+/* ---------- Dashboard ---------- */
+function countUp(el,target,dec=1,dur=900){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=dec?fmt1(target):fmt(target);return;}
+  const t0=performance.now();
+  (function step(t){const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);
+    el.textContent=dec?fmt1(target*e):fmt(target*e);
+    if(p<1)requestAnimationFrame(step);})(t0);
+}
+function renderDash(){
+  const idxAvg=avg(ALL.map(a=>a.c.index));
+  countUp(document.getElementById('k-avg'),idxAvg);
+  document.getElementById('k-avg-sub').textContent='über '+ALL.length+' Agenturpartner';
+  const onMax=ALL.filter(a=>a.c.quote>=1).length;
+  document.getElementById('k-max').textContent=onMax;
+  document.getElementById('k-total').textContent=ALL.length;
+  const top=[...ALL].sort((x,y)=>y.c.deltaPct-x.c.deltaPct)[0];
+  document.getElementById('k-mom').textContent=top.name.split(' ').slice(-1)[0];
+  document.getElementById('k-mom-sub').textContent=(top.c.deltaPct>0?'+':'')+fmt(top.c.deltaPct)+' % (3M vs. 3M)';
+  document.getElementById('k-warn').textContent=ALL.filter(a=>a.c.flagAlarm||a.c.quote<0.35).length;
+
+  const sorted=[...ALL].sort((x,y)=>y.c.deltaPct-x.c.deltaPct);
+  const movers=[...sorted.slice(0,3),...sorted.slice(-3)];
+  document.getElementById('movers').innerHTML=movers.map(a=>`
+    <div class="mover" onclick="openDetail('${a.vm}')">
+      <span class="nm">${a.name}</span>
+      <span class="mono ${a.c.deltaPct>=0?'delta up':'delta down'}">${a.c.deltaPct>=0?'▲ +':'▼ '}${fmt(a.c.deltaPct)} %</span>
+    </div>`).join('');
+
+  const g=ALL.filter(a=>a.c.quote>=1).length, r=ALL.filter(a=>a.c.flagAlarm||a.c.quote<0.35).length, y=ALL.length-g-r;
+  document.getElementById('ampelBar').innerHTML=
+    `<div style="flex:${g};height:16px;background:var(--signal);border-radius:99px 0 0 99px" title="${g} gesichert"></div>
+     <div style="flex:${y};height:16px;background:var(--amber)" title="${y} auf dem Weg"></div>
+     <div style="flex:${r};height:16px;background:var(--alarm);border-radius:0 99px 99px 0" title="${r} kritisch"></div>`;
+}
+
+/* ---------- Liste ---------- */
+function renderListe(){
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  const s=document.getElementById('sortSel').value;
+  let arr=ALL.filter(a=>a.name.toLowerCase().includes(q));
+  arr.sort((x,y)=> s==='name'?x.name.localeCompare(y.name)
+    : s==='delta'?y.c.deltaPct-x.c.deltaPct
+    : s==='kum'?y.c.kum-x.c.kum : y.c.index-x.c.index);
+  document.getElementById('liste').innerHTML=arr.map(a=>{
+    const c=a.c, amp=c.quote>=1?'pos':(c.flagAlarm||c.quote<0.35)?'alarm':'neg';
+    return `<div class="card agp-card" onclick="openDetail('${a.vm}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter')openDetail('${a.vm}')">
+      <div>
+        <div class="name">${a.name}</div>
+        <div class="meta">
+          <span class="chip ${amp}">${c.quote>=1?'✓ Höchststufe':'Pfad '+fmt(c.quote*100)+' %'}</span>
+          <span class="chip neutral">${c.mom}</span>
+          <span class="chip neutral">${c.vola}</span>
+          ${c.dq!=='hoch'?`<span class="badge-dq">Daten: ${c.dq}</span>`:''}
+        </div>
+      </div>
+      <div>
+        <div class="idx">${fmt1(c.index)}</div>
+        <div class="delta ${c.deltaPct>=0?'up':'down'}">${c.deltaPct>=0?'▲ +':'▼ '}${fmt(c.deltaPct)} %</div>
+      </div>
+      ${sparkSVG(a.m)}
+    </div>`;}).join('');
+}
+document.getElementById('q').oninput=renderListe;
+document.getElementById('sortSel').onchange=renderListe;
+
+/* ---------- Detail ---------- */
+let curVM=null, replayRAF=null;
+function openDetail(vm){ curVM=vm; renderDetail(); show('detail'); setTimeout(()=>startReplay(),350); }
+window.openDetail=openDetail;
+
+function renderDetail(){
+  const a=ALL.find(x=>x.vm===curVM), c=a.c, o=ov(a.vm);
+  const ns=nextStufe(c.hochr);
+  const dims=[
+    ['perf','Performance','Rollierende 3M-Provision: Ø '+fmt(c.p3)+' €'],
+    ['entw','Entwicklung','Momentum + Trend gegen eigene Historie'],
+    ['wirt','Wirtschaftlichkeit','Fixum-Pfad: Hochrechnung '+fmt(c.hochr)+' €'],
+    ['stab','Stabilität',c.cv!==undefined?'Schwankung (CV): '+fmt1(c.cv*100)+' %':'zu wenig Monate'],
+    ['potz','Potenzial','Manuelle Quartalsbewertung']
+  ];
+  const critLbl={lern:'Lernfähigkeit',init:'Eigeninitiative',umsetz:'Umsetzungsstärke',team:'Teamwert'};
+  const rt=o.ratings||{};
+
+  document.getElementById('v-detail').innerHTML=`
+  <a class="back" href="javascript:show('liste')">← Zurück zu den Kursen</a>
+  <div class="detail-head">
+    <div>
+      <h1>${a.name}</h1>
+      <div class="meta" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+        <span class="chip neutral">VM ${a.vm}</span>
+        <span class="chip ${c.flagAlarm?'alarm':'neutral'}">${c.rating}</span>
+        <span class="badge-dq">Datenqualität: ${c.dq}</span>
+      </div>
+    </div>
+    <div class="idx-big" id="idxBig">${fmt1(c.index)}<small>GESAMTINDEX 0–100</small></div>
+  </div>
+
+  <div class="kurschart">
+    <div class="kc-top">
+      <span class="kc-monat" id="kcMonat">${a.monate[0].toUpperCase()} – ${a.monate[a.monate.length-1].toUpperCase()} · WERTUNGSZEITRAUM</span>
+      <span class="kc-kum"><span id="kcKum">${fmt(c.kum)}</span> <small>€ kumuliert</small></span>
+    </div>
+    <svg id="kcSvg" viewBox="0 0 640 210"></svg>
+    <div class="kc-foot">
+      <span class="kc-stufe">Hochrechnung <b id="kcHochr">${fmt(c.hochr)} €</b> → Stufe <b id="kcStufe">${fmt(c.fixF)} €</b></span>
+      <button class="btn-replay" onclick="startReplay()">▶ Replay</button>
+    </div>
+  </div>
+
+  <div class="card cockpit">
+    <h2 class="sect" style="margin-top:0">Fixum-Pfad</h2>
+    <div class="row"><span class="l">Produktion (${c.n} Monate)</span><span>${fmt(c.prod)} €</span></div>${c.sv?`<div class="row"><span class="l">Sonderverrechnung (Periodenstart)</span><span>${fmt(c.sv)} €</span></div>`:''}<div class="row"><span class="l"><b>Wertungsrelevant kumuliert</b></span><span><b>${fmt(c.kum)} €</b></span></div>
+    <div class="row"><span class="l">Hochrechnung 12M</span><span>${fmt(c.hochr)} €</span></div>
+    <div class="row"><span class="l">Fixum aktuell → Folgezeitraum</span><span>${fmt(a.fixA)} € → <b>${fmt(c.fixF)} €</b></span></div>
+    ${c.flagAlarm?`<div class="row"><span class="l" style="color:var(--alarm)">Unterverdienst / Rückzahlung</span><span style="color:var(--alarm)">${fmt(a.uv)} € / ${fmt(a.rz)} €</span></div>`:''}
+    <div class="pbar"><div class="fill ${c.quote>=1?'':c.quote>=0.35&&!c.flagAlarm?'warn':'alarm'}" id="pfadFill" style="width:0%"></div></div>
+    <div class="pbar-lbl"><span>0</span><span>Jahresziel ${fmt(CFG.jahresziel)} € = Höchststufe</span></div>
+    <div class="stufen" aria-hidden="true">${STAFFEL.map(([s])=>`<div class="st ${c.hochr>=s?'done':''}" data-s="${s}"></div>`).join('')}</div>
+    <div class="stufen-lbl"><span>550 €</span><span>Stufenleiter</span><span>3.050 €</span></div>
+    <div class="nextgoal ${c.flagAlarm?'alarm':''}">
+      ${c.quote>=1
+        ? `<b>Höchststufe rechnerisch gesichert.</b> Jeder weitere Euro baut Puffer für den Folgezeitraum.`
+        : ns ? `<b>Nächste Stufe (${fmt(ns.fixum)} €):</b> Hochrechnung braucht noch ${fmt(ns.schwelle-c.hochr)} €. Bis zur Höchststufe: Ø ${fmt(Math.max(0,(CFG.jahresziel-c.kum))/Math.max(1,12-c.n))} €/Monat für die restlichen ${Math.max(1,12-c.n)} Monate.`
+        : ''}
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 class="sect" style="margin-top:0">Bewertungsdimensionen <span class="badge-dq" style="float:right">effektive Gewichte bei ${c.active.length}/5 aktiv</span></h2>
+    ${dims.map(([k,lbl,sub])=>{
+      const v=c.scores[k], on=v!==null;
+      const wEff=on?(CFG.gewichte[k]/c.wsum*100):0;
+      return `<div class="dim ${on?'':'inaktiv'}">
+        <div class="top"><span>${lbl} <span class="w">${on?fmt(wEff)+' %':'inaktiv → neugewichtet'}</span></span><span class="score">${on?fmt(v):'–'}</span></div>
+        <div class="bar"><i style="width:${on?v:0}%"></i></div>
+        <div class="hinweis" style="margin-top:3px">${sub}</div>
+      </div>`;}).join('')}
+  </div>
+
+  <div class="card">
+    <h2 class="sect" style="margin-top:0">Coaching-Impulse</h2>
+    ${c.imp.map(t=>`<div class="impuls">${t}</div>`).join('')}
+  </div>
+
+  <div class="card">
+    <h2 class="sect" style="margin-top:0">Phase & Potenzial-Bewertung</h2>
+    <div class="rate-row"><span>Entwicklungsphase</span>
+      <select onchange="setPhase('${a.vm}',this.value)">
+        ${Object.entries(CFG.phasenLabel).map(([k,l])=>`<option value="${k}" ${c.phase===k?'selected':''}>${l}</option>`).join('')}
+      </select></div>
+    ${Object.entries(critLbl).map(([k,l])=>`
+      <div class="rate-row"><span>${l}</span>
+        <div class="stars" role="radiogroup" aria-label="${l}">
+          ${[1,2,3,4,5].map(v=>`<button class="${(rt[k]||0)>=v?'on':''}" onclick="setRating('${a.vm}','${k}',${v})" aria-label="${v} von 5">${v}</button>`).join('')}
+        </div></div>`).join('')}
+    <p class="hinweis">Bewertungsanker: 1 = nimmt Feedback kaum an · 3 = setzt erwartungsgemäß um · 5 = lernt außergewöhnlich schnell, unterstützt andere. Gespeichert lokal, mit Datum.</p>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-top:4px">
+    <button class="btn-replay" style="background:var(--russ);color:var(--kalk);flex:1" onclick="openPraes('${a.vm}')">Präsentationsmodus (für Gespräch mit ${a.name.split(' ')[0]})</button>
+  </div>
+  <p class="hinweis">Berechnung: Index = Σ(Score × Gewicht) / Σ(aktive Gewichte). Fehlende Dimensionen verschlechtern den Index nie — sie werden transparent neugewichtet. Rating & Vergleiche sind intern und erscheinen nicht im Präsentationsmodus.</p>`;
+
+  setTimeout(()=>{document.getElementById('pfadFill').style.width=Math.min(100,c.quote*100)+'%';},60);
+}
+
+function setPhase(vm,p){ ov(vm).phase=p; saveOV(); const a=ALL.find(x=>x.vm===vm); recompute(a); renderDetail(); }
+function setRating(vm,k,v){ const o=ov(vm); o.ratings=o.ratings||{}; o.ratings[k]=o.ratings[k]===v?0:v; o.ratedAt=new Date().toISOString(); saveOV(); const a=ALL.find(x=>x.vm===vm); recompute(a); renderDetail(); }
+window.setPhase=setPhase; window.setRating=setRating;
+
+/* ---------- Kurs-Replay (Signature) ---------- */
+function chartGeo(a){
+  const W=640,H=210,pad={l:10,r:14,t:16,b:26};
+  const m=a.m, mx=Math.max(...m,1), mn=Math.min(0,...m);
+  const X=i=>pad.l+i*(W-pad.l-pad.r)/Math.max(m.length-1,1);
+  const Y=v=>H-pad.b-((v-mn)/(mx-mn||1))*(H-pad.t-pad.b);
+  return {W,H,pad,m,X,Y,mn};
+}
+function drawChart(a,upTo){
+  const {W,H,pad,m,X,Y,mn}=chartGeo(a);
+  const k=Math.max(1,upTo);
+  const pts=m.slice(0,k+1).map((v,i)=>[X(i),Y(v)]);
+  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const area=line+` L ${pts[pts.length-1][0].toFixed(1)} ${H-pad.b} L ${pts[0][0].toFixed(1)} ${H-pad.b} Z`;
+  const zero=mn<0?Y(0):null;
+  const svg=document.getElementById('kcSvg'); if(!svg)return;
+  svg.innerHTML=`
+    <defs><linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3E8E76" stop-opacity=".55"/><stop offset="1" stop-color="#3E8E76" stop-opacity="0"/></linearGradient></defs>
+    ${zero?`<line x1="${pad.l}" y1="${zero}" x2="${W-pad.r}" y2="${zero}" stroke="#57534A" stroke-dasharray="3 5"/>`:''}
+    <path d="${area}" fill="url(#ag)"/>
+    <path d="${line}" fill="none" stroke="#7FD1B5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${m.slice(0,k+1).map((v,i)=>`<circle cx="${X(i)}" cy="${Y(v)}" r="${i===k?5:3}" fill="${i===k?'#7FD1B5':'#3E8E76'}"/>`).join('')}
+    ${m.map((v,i)=>`<text x="${X(i)}" y="${H-8}" font-family="Space Mono" font-size="10" fill="${i<=k?'#B9B4A8':'#4A4640'}" text-anchor="middle">${a.monate[i].toUpperCase()}</text>`).join('')}`;
+}
+function startReplay(){
+  const a=ALL.find(x=>x.vm===curVM); if(!a)return;
+  if(replayRAF)cancelAnimationFrame(replayRAF);
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const kumEl=document.getElementById('kcKum'),monEl=document.getElementById('kcMonat'),
+        hEl=document.getElementById('kcHochr'),sEl=document.getElementById('kcStufe');
+  if(reduce){ drawChart(a,a.m.length-1); return; }
+  const per=520, total=per*a.m.length; const t0=performance.now();
+  function frame(t){
+    const el=t-t0, step=Math.min(a.m.length-1,Math.floor(el/per));
+    const kum=a.m.slice(0,step+1).reduce((s,x)=>s+x,0);
+    const partial=Math.min(1,(el-step*per)/per);
+    const kumShow=kum-(1-partial)*a.m[step];
+    drawChart(a,step);
+    kumEl.textContent=fmt(Math.max(0,kumShow));
+    monEl.textContent='REPLAY · '+a.monate[step].toUpperCase()+' '+(step<4&&a.wb>'2026'?'2026':'');
+    const h=kumShow/(step+partial||1)*12;
+    hEl.textContent=fmt(Math.max(0,h))+' €'; sEl.textContent=fmt(lookupFixum(h))+' €';
+    document.querySelectorAll('.stufen .st').forEach(st=>st.classList.toggle('done',h>=+st.dataset.s));
+    if(el<total){replayRAF=requestAnimationFrame(frame);}
+    else{
+      const c=a.c;
+      kumEl.textContent=fmt(c.kum);
+      monEl.textContent=a.monate[0].toUpperCase()+' – '+a.monate[a.monate.length-1].toUpperCase()+' · WERTUNGSZEITRAUM';
+      hEl.textContent=fmt(c.hochr)+' €'; sEl.textContent=fmt(c.fixF)+' €';
+      drawChart(a,a.m.length-1);
+    }
+  }
+  replayRAF=requestAnimationFrame(frame);
+}
+window.startReplay=startReplay;
+
+/* ---------- Portfolio-Matrix ---------- */
+function renderMatrix(){
+  const W=700,H=520,pad=54;
+  const xs=a=>pad+(a.c.index/100)*(W-2*pad);
+  const dRange=60;
+  const ys=a=>H-pad-((clamp(a.c.deltaPct,-dRange,dRange)+dRange)/(2*dRange))*(H-2*pad);
+  const maxK=Math.max(...ALL.map(a=>a.c.kum));
+  const svg=document.getElementById('matrixSvg');
+  svg.innerHTML=`
+    <line x1="${W/2}" y1="${pad-10}" x2="${W/2}" y2="${H-pad+10}" stroke="var(--linie)"/>
+    <line x1="${pad-10}" y1="${H/2}" x2="${W-pad+10}" y2="${H/2}" stroke="var(--linie)"/>
+    <text x="${W-pad}" y="${pad-24}" font-family="Bricolage Grotesque" font-weight="700" font-size="13" fill="#8B867C" text-anchor="end">STARS</text>
+    <text x="${pad}" y="${pad-24}" font-family="Bricolage Grotesque" font-weight="700" font-size="13" fill="#8B867C">ZUKUNFTSWERTE</text>
+    <text x="${W-pad}" y="${H-pad+34}" font-family="Bricolage Grotesque" font-weight="700" font-size="13" fill="#8B867C" text-anchor="end">STABILE LEISTUNGSTRÄGER</text>
+    <text x="${pad}" y="${H-pad+34}" font-family="Bricolage Grotesque" font-weight="700" font-size="13" fill="#8B867C">ENTWICKLUNGSFÄLLE</text>
+    ${ALL.map(a=>{
+      const r=7+Math.sqrt(a.c.kum/maxK)*16;
+      const col=a.c.flagAlarm?'var(--alarm)':a.c.quote>=1?'var(--signal)':'var(--amber)';
+      return `<g style="cursor:pointer" onclick="openDetail('${a.vm}')" tabindex="0" role="button" aria-label="${a.name}, Index ${fmt1(a.c.index)}">
+        <circle cx="${xs(a)}" cy="${ys(a)}" r="${r}" fill="${col}" fill-opacity=".78"/>
+        <text x="${xs(a)}" y="${ys(a)-r-4}" font-family="Space Mono" font-size="10.5" fill="#4A4640" text-anchor="middle">${a.name.split(' ').slice(-1)[0]}</text></g>`;
+    }).join('')}`;
+}
+
+/* ---------- Vergleich ---------- */
+let vglSel=[];
+function renderVglPick(){
+  document.getElementById('vglPick').innerHTML=ALL.map(a=>
+    `<button class="${vglSel.includes(a.vm)?'on':''}" onclick="toggleVgl('${a.vm}')">${a.name.split(' ').slice(-1)[0]}</button>`).join('');
+  renderVgl();
+}
+function toggleVgl(vm){
+  if(vglSel.includes(vm)) vglSel=vglSel.filter(x=>x!==vm);
+  else if(vglSel.length<4) vglSel.push(vm);
+  renderVglPick();
+}
+window.toggleVgl=toggleVgl;
+const VCOLORS=['#1A1816','#0E5A46','#B07A1E','#A63A26'];
+function renderVgl(){
+  const out=document.getElementById('vglOut');
+  if(vglSel.length<2){out.innerHTML='<p class="hinweis">Mindestens zwei AGP wählen. Der Vergleich zeigt immer die Entwicklungsphase mit — Phasen-Kontext gehört zur Fairness.</p>';return;}
+  const sel=vglSel.map(vm=>ALL.find(a=>a.vm===vm));
+  const dims=[['index','Gesamtindex'],['perf','Performance'],['entw','Entwicklung'],['wirt','Wirtschaftlichkeit'],['stab','Stabilität'],['potz','Potenzial']];
+  out.innerHTML=`<div class="card">
+    ${dims.map(([k,l])=>`<div class="vgl-dim"><h4>${l}</h4>
+      ${sel.map((a,i)=>{const v=k==='index'?a.c.index:a.c.scores[k];
+        return `<div class="vgl-bar"><span>${a.name.split(' ').slice(-1)[0]} <span class="badge-dq">${CFG.phasenLabel[a.c.phase]}</span></span>
+          <div class="b"><i style="width:${v===null?0:v}%;background:${VCOLORS[i]}"></i></div>
+          <span class="v">${v===null?'–':fmt(v)}</span></div>`;}).join('')}
+    </div>`).join('')}
+    <h4 style="font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--russ-70);margin:14px 0 6px">Kursverläufe</h4>
+    ${sel.map((a,i)=>`<div style="margin-bottom:6px"><span style="font-size:12.5px;font-family:var(--font-mono);color:${VCOLORS[i]}">■ ${a.name.split(' ').slice(-1)[0]}</span>${sparkSVG(a.m)}</div>`).join('')}
+  </div>`;
+}
+
+/* ---------- Präsentationsmodus ---------- */
+function openPraes(vm){
+  const a=ALL.find(x=>x.vm===vm), c=a.c, first=a.name.split(' ')[0];
+  const ns=nextStufe(c.hochr);
+  const dimsSorted=Object.entries(c.scores).filter(([k,v])=>v!==null).sort((x,y)=>y[1]-x[1]);
+  const staerken={perf:'Starke aktuelle Produktion — dein Motor läuft.',entw:'Deutliche Aufwärtsentwicklung — du wirst messbar besser.',wirt:'Dein Fixum-Pfad ist wirtschaftlich stark.',stab:'Verlässliche Konstanz — auf dich ist Verlass.',potz:'Hoher Zukunftswert — in dich lohnt sich Investition.'};
+  document.getElementById('v-praes').innerHTML=`
+    <button class="praes-exit" onclick="show('detail')">✕ Schließen</button>
+    <div style="max-width:640px;margin:0 auto;padding-top:26px">
+      <p class="mono" style="font-size:12px;letter-spacing:.1em;color:var(--russ-40)">DEIN KURS · ${CFG.anzeigename.toUpperCase()}</p>
+      <h1 style="font-size:30px;font-weight:800;margin:4px 0 18px">${a.name}</h1>
+      <div class="kurschart">
+        <div class="kc-top"><span class="kc-monat" id="kcMonat">DEIN WERTUNGSZEITRAUM</span>
+        <span class="kc-kum"><span id="kcKum">${fmt(c.kum)}</span> <small>€ kumuliert</small></span></div>
+        <svg id="kcSvg" viewBox="0 0 640 210"></svg>
+        <div class="kc-foot"><span class="kc-stufe">Hochrechnung <b id="kcHochr">${fmt(c.hochr)} €</b> → Stufe <b id="kcStufe">${fmt(c.fixF)} €</b></span>
+        <button class="btn-replay" onclick="startReplay()">▶ Replay</button></div>
+      </div>
+      <div class="card">
+        <h2 class="sect" style="margin-top:0">Deine Stufenleiter</h2>
+        <div class="stufen">${STAFFEL.map(([s])=>`<div class="st ${c.hochr>=s?'done':''}" data-s="${s}"></div>`).join('')}</div>
+        <div class="stufen-lbl"><span>550 €</span><span></span><span>3.050 € MAX</span></div>
+        <div class="nextgoal">${c.quote>=1
+          ?`<b>Höchststufe gesichert, ${first}.</b> Jetzt geht es um Puffer und Wiederholbarkeit.`
+          :ns?`<b>Deine nächste Stufe (${fmt(ns.fixum)} €):</b> noch ${fmt(ns.schwelle-c.hochr)} € Hochrechnung. Das ist machbar — und die Leiter endet erst bei 3.050 €.`:''}</div>
+      </div>
+      <div class="card">
+        <h2 class="sect" style="margin-top:0">Deine Stärken</h2>
+        ${dimsSorted.slice(0,3).map(([k],i)=>`<div class="staerke"><span class="n">0${i+1}</span><span>${staerken[k]}</span></div>`).join('')}
+      </div>
+      <p class="hinweis" style="text-align:center">Diese Ansicht zeigt ausschließlich deine eigenen Daten. Keine Vergleiche, keine Rankings — dein Gegner ist die Stufenleiter.</p>
+    </div>`;
+  curVM=vm; show('praes'); setTimeout(()=>{startReplay();},350);
+}
+window.openPraes=openPraes;
+
+/* ---------- Export ---------- */
+document.getElementById('btnExport').onclick=()=>{
+  const payload={exportiert:new Date().toISOString(),config:CFG,staffel:STAFFEL,agp:ALL.map(a=>({vm:a.vm,name:a.name,wertungsbeginn:a.wb,monate:a.monate,provision:a.m,fixum:{aktuell:a.fixA,folge:a.fixF,unterverdienst:a.uv,rueckzahlung:a.rz},berechnung:a.c,overrides:OV[a.vm]||null}))};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(blob),l=document.createElement('a');
+  l.href=u;l.download='agp-index-export.json';l.click();URL.revokeObjectURL(u);
+};
+
+/* =====================================================================
+   Welle 1 · Supabase: Auth, Laden, Import, Seed
+===================================================================== */
+const SB_URL='https://hdomzmdwirinyxuyytxl.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhkb216bWR3aXJpbnl4dXl5dHhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMjc0OTAsImV4cCI6MjA5OTgwMzQ5MH0._arObPfqfNv37uE0ka5eb66refcoqQdla435GsSbgu0';
+const sb = window.supabase.createClient(SB_URL, SB_KEY);
+let ROLLE='agp', MYVM=null, booted=false;
+
+function showLogin(){ document.getElementById('loginOverlay').style.display='flex'; }
+async function sendLink(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const msg=document.getElementById('loginMsg'), btn=document.getElementById('btnLogin');
+  if(!email){msg.textContent='Bitte E-Mail eingeben.';return;}
+  btn.disabled=true;
+  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
+  msg.textContent=error?('Fehler: '+error.message):'Link verschickt — prüfe dein Postfach (auch Spam).';
+  btn.disabled=false;
+}
+window.sendLink=sendLink;
+
+const MONL=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+const isoAddM=(iso,i)=>{const d=new Date(iso+'T00:00:00Z');d.setUTCMonth(d.getUTCMonth()+i);return d.toISOString().slice(0,7)+'-01';};
+
+async function loadData(){
+  const {data,error}=await sb.from('agp').select('*, monatswert(monat,quelle,gesamt)').eq('aktiv',true).order('name');
+  if(error){console.error(error);alert('Laden fehlgeschlagen: '+error.message);return;}
+  ALL=(data||[]).map(a=>{
+    const mw=(a.monatswert||[]).filter(x=>x.quelle==='datenblatt').sort((x,y)=>x.monat<y.monat?-1:1);
+    const o={vm:a.vm_nr,name:a.name,wb:a.wertungsbeginn,eintritt:a.eintritt||undefined,
+      sv:+a.sonderverrechnung||0,
+      monate:mw.map(x=>MONL[+x.monat.slice(5,7)-1]), m:mw.map(x=>+x.gesamt||0),
+      fixA:+a.fixum_aktuell||0,fixF:+a.fixum_folge||0,uv:+a.unterverdienst||0,rz:+a.rueckzahlung||0};
+    if(o.m.length) o.c=compute(o);
+    return o;
+  }).filter(a=>a.c);
+}
+
+async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){ showLogin(); return; }
+  document.getElementById('loginOverlay').style.display='none';
+  if(booted) return; booted=true;
+  const {data:prof}=await sb.from('profiles').select('rolle,vm_nr').eq('id',session.user.id).maybeSingle();
+  ROLLE=prof?.rolle||'agp'; MYVM=prof?.vm_nr||null;
+  await loadData();
+  if(ROLLE!=='ldo'){
+    document.querySelector('nav.bottom').style.display='none';
+    document.getElementById('btnExport').style.display='none';
+    const own=ALL.find(a=>a.vm===MYVM);
+    if(own){ openPraes(own.vm); }
+    else document.querySelector('main').innerHTML='<div class="card"><p>Dein Zugang ist angelegt, aber noch keinem AGP zugeordnet. Melde dich bei Thomas.</p></div>';
+    return;
+  }
+  if(!ALL.length){ document.getElementById('seedCard').style.display='block'; show('import'); }
+  else { renderDash(); show('dash'); }
+}
+sb.auth.onAuthStateChange((_e,sess)=>{ if(sess) boot(); else showLogin(); });
+boot();
+
+/* ---------- Seed (22 AGP, Stand 30.06.2026) ---------- */
+async function seedDB(){
+  const out=document.getElementById('impOut');
+  out.innerHTML='<div class="card">Spiele Startbestand ein …</div>';
+  for(const sd of SEED){
+    const {data:row,error}=await sb.from('agp').upsert({vm_nr:sd.vm,name:sd.name,wertungsbeginn:sd.wb,
+      eintritt:sd.eintritt||null,fixum_aktuell:sd.fixA,fixum_folge:sd.fixF,
+      unterverdienst:sd.uv||0,rueckzahlung:sd.rz||0,sonderverrechnung:sd.sv||0},
+      {onConflict:'vm_nr'}).select().single();
+    if(error){out.innerHTML='<div class="card">Fehler bei '+sd.name+': '+error.message+'</div>';return;}
+    const rows=sd.m.map((v,i)=>({agp_id:row.id,monat:isoAddM(sd.wb,i),quelle:'datenblatt',gesamt:v}));
+    const {error:e2}=await sb.from('monatswert').upsert(rows,{onConflict:'agp_id,monat,quelle'});
+    if(e2){out.innerHTML='<div class="card">Fehler Monatswerte '+sd.name+': '+e2.message+'</div>';return;}
+  }
+  out.innerHTML='<div class="card status-ok">✓ 22 AGP mit Monatswerten eingespielt.</div>';
+  document.getElementById('seedCard').style.display='none';
+  await loadData(); renderDash();
+}
+window.seedDB=seedDB;
+
+/* ---------- Import: Wertungsblatt ---------- */
+let pendingWB=null;
+async function importWB(file){
+  if(!file)return;
+  const out=document.getElementById('impOut');
+  out.innerHTML='<div class="card">Lese '+file.name+' …</div>';
+  try{
+    const wb=XLSX.read(await file.arrayBuffer(),{cellDates:true});
+    const parsed=[];
+    for(const sn of wb.SheetNames){
+      if(sn.includes('Einzelsätze')||sn==='Tabelle1')continue;
+      const A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null});
+      const agpName=String(A[2]?.[0]||'').split(' - ')[0].trim();
+      const vm=sn.trim().split(' ').pop();
+      let wbg=A[4]?.[15];
+      const wbISO=wbg instanceof Date? wbg.toISOString().slice(0,10) : (typeof wbg==='string'? wbg.slice(0,10):null);
+      const gz=A.findIndex(r=>String(r?.[0]||'').startsWith('Gesamtabrechn'));
+      if(gz<0||!agpName)continue;
+      const header=(A[gz+1]||[]).slice(1,13).filter(x=>x!==null&&x!=='#N/A');
+      const n=header.length;
+      const summe=(A[gz+2]||[]).slice(1,1+n).map(v=>+v||0);
+      let svTotal=0;
+      for(let r=gz+3;r<gz+7;r++) if(String(A[r]?.[0]||'').startsWith('Sonderverrech')){svTotal=+(A[r]?.[13])||0;break;}
+      let fixA=0,fixF=0,uv=0,rz=0;
+      for(let r=36;r<Math.min(A.length,62);r++){
+        const lab=String(A[r]?.[15]||''),val=A[r]?.[18];
+        if(lab.startsWith('Fixum aktuell'))fixA=+val||0;
+        else if(lab.startsWith('Fixum für'))fixF=+val||0;
+        else if(lab.startsWith('Unterverdienst'))uv=+val||0;
+        else if(lab.startsWith('Rückzahlung:'))rz=+val||0;
+      }
+      /* Einzelsätze-Sheet des AGP */
+      const esSheet=wb.SheetNames.find(x=>x.startsWith(sn)&&x.includes('Einzelsätze'));
+      const es=[];
+      if(esSheet){
+        const E=XLSX.utils.sheet_to_json(wb.Sheets[esSheet],{header:1,raw:true,defval:null});
+        for(let r=4;r<E.length;r++){
+          const row=E[r]; if(!row||row[5]===null||row[5]===undefined)continue;
+          const d=x=>x instanceof Date?x.toISOString().slice(0,10):null;
+          es.push({vsnr:String(row[0]||''),sparte:String(row[1]||''),buchung:d(row[2]),abrechnung:d(row[3]),betrag:+row[5]||0});
+        }
+      }
+      parsed.push({vm,name:agpName,wbISO,n,summe,svTotal,fixA,fixF,uv,rz,es});
+    }
+    pendingWB=parsed;
+    out.innerHTML='<div class="card"><h2 class="sect" style="margin-top:0">Vorschau · '+parsed.length+' AGP erkannt</h2>'
+      +'<table class="imp-table"><tr><th>AGP</th><th class="mono">Monate</th><th class="mono">Sonderverr.</th><th class="mono">Fixum Folge</th><th class="mono">Einzelsätze</th></tr>'
+      +parsed.map(p=>'<tr><td>'+p.name+'</td><td class="mono">'+p.n+'</td><td class="mono">'+(p.svTotal?fmt(p.svTotal)+' €':'—')
+        +'</td><td class="mono">'+fmt(p.fixF)+' €</td><td class="mono">'+p.es.length+'</td></tr>').join('')
+      +'</table><button class="btn-primary" style="margin-top:14px" onclick="commitWB()">Import bestätigen (Upsert — vorhandene Monate werden aktualisiert)</button></div>';
+  }catch(e){out.innerHTML='<div class="card status-warn">Fehler beim Lesen: '+e.message+'</div>';}
+}
+async function commitWB(){
+  const out=document.getElementById('impOut');
+  let neu=0,akt=0;
+  for(const p of pendingWB){
+    const {data:row,error}=await sb.from('agp').upsert({vm_nr:p.vm,name:p.name,wertungsbeginn:p.wbISO,
+      fixum_aktuell:p.fixA,fixum_folge:p.fixF,unterverdienst:p.uv,rueckzahlung:p.rz,sonderverrechnung:p.svTotal},
+      {onConflict:'vm_nr'}).select().single();
+    if(error){out.innerHTML='<div class="card status-warn">Fehler '+p.name+': '+error.message+'</div>';return;}
+    const rows=p.summe.map((v,i)=>({agp_id:row.id,monat:isoAddM(p.wbISO,i),quelle:'datenblatt',gesamt:v}));
+    const {error:e2}=await sb.from('monatswert').upsert(rows,{onConflict:'agp_id,monat,quelle'});
+    if(e2){out.innerHTML='<div class="card status-warn">Fehler Monatswerte '+p.name+': '+e2.message+'</div>';return;}
+    if(p.es.length){
+      await sb.from('einzelsatz').delete().eq('agp_id',row.id);
+      for(let i=0;i<p.es.length;i+=500)
+        await sb.from('einzelsatz').insert(p.es.slice(i,i+500).map(x=>({...x,agp_id:row.id})));
+    }
+    neu++;
+  }
+  out.innerHTML='<div class="card status-ok">✓ Wertungsblatt importiert: '+neu+' AGP aktualisiert (Monate + Einzelsätze + Fixum).</div>';
+  await loadData(); pendingWB=null;
+}
+window.importWB=importWB; window.commitWB=commitWB;
+
+/* ---------- Import: Wettbewerb (Eintritt + Rang) ---------- */
+async function importWE(file){
+  if(!file)return;
+  const out=document.getElementById('impOut');
+  out.innerHTML='<div class="card">Lese '+file.name+' …</div>';
+  try{
+    const wb=XLSX.read(await file.arrayBuffer(),{cellDates:true});
+    const sn=wb.SheetNames.find(x=>x.toLowerCase().includes('wettbewerb'))||wb.SheetNames[0];
+    const A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null});
+    const hIdx=A.findIndex(r=>r&&r.filter(x=>x!==null).length>=4);
+    const H=A[hIdx].map(x=>String(x||'').toLowerCase());
+    const col=t=>H.findIndex(h=>h.includes(t));
+    const cVM=col('vm'), cSeit=col('seit'), cPkt=col('punkt'), cRang=col('rang')>=0?col('rang'):col('platz');
+    const norm=v=>String(v||'').trim().split(' ').pop();
+    const byVM={}; ALL.forEach(a=>byVM[norm(a.vm)]=a);
+    let hits=0;
+    const monat=new Date().toISOString().slice(0,7)+'-01';
+    for(let r=hIdx+1;r<A.length;r++){
+      const row=A[r]; if(!row)continue;
+      const vm=norm(row[cVM]); const a=byVM[vm];
+      if(!a)continue;
+      const {data:ag}=await sb.from('agp').select('id').eq('vm_nr',a.vm).single();
+      if(!ag)continue;
+      if(cSeit>=0&&row[cSeit]instanceof Date)
+        await sb.from('agp').update({eintritt:row[cSeit].toISOString().slice(0,10)}).eq('id',ag.id);
+      await sb.from('wettbewerb_snapshot').upsert({agp_id:ag.id,monat,
+        punkte:cPkt>=0?+row[cPkt]||null:null, rang:cRang>=0?+row[cRang]||null:null},{onConflict:'agp_id,monat'});
+      hits++;
+    }
+    out.innerHTML='<div class="card status-ok">✓ Wettbewerb: '+hits+' eigene AGP gematcht (Eintritt + Rang-Snapshot '+monat.slice(0,7)+').</div>';
+    await loadData();
+  }catch(e){out.innerHTML='<div class="card status-warn">Fehler: '+e.message+'</div>';}
+}
+window.importWE=importWE;
+
+/* ---------- Import: Tagesstatistik (generischer Ingest, Welle-4-Basis) ---------- */
+async function importTS(file){
+  if(!file)return;
+  const out=document.getElementById('impOut');
+  out.innerHTML='<div class="card">Lese '+file.name+' … (43k Zeilen, dauert kurz)</div>';
+  try{
+    const wb=XLSX.read(await file.arrayBuffer(),{raw:true});
+    const sn=wb.SheetNames.find(x=>x.includes('Monatsübersicht VM'));
+    if(!sn)throw new Error('Sheet "Monatsübersicht VM" nicht gefunden');
+    const A=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,raw:true,defval:null});
+    /* Header flachziehen (Zeilen 1-3), Datum aus Dateiname */
+    const h1=A[1]||[],h2=A[2]||[];let last='';
+    const H=h1.map((v,i)=>{if(v)last=String(v);const sub=h2[i]?String(h2[i]):'';return (last+(sub?'_'+sub:'')).replace(/\s+/g,'_');});
+    const dm=file.name.match(/(\d{2})_(\d{2})_(\d{4})/);
+    const monat=dm?dm[3]+'-'+dm[2]+'-01':new Date().toISOString().slice(0,7)+'-01';
+    const byName={}; ALL.forEach(a=>byName[a.name.toLowerCase().replace(/\s+/g,' ')]=a);
+    let hits=0;
+    for(let r=3;r<A.length;r++){
+      const row=A[r]; if(!row||row[0]!=='OS')continue;
+      const nm=String(row[3]||'').toLowerCase().replace(/\s+/g,' ');
+      const a=byName[nm]; if(!a)continue;
+      const js={}; H.forEach((h,i)=>{if(i>3&&row[i]!==null&&row[i]!==0)js[h]=row[i];});
+      const {data:ag}=await sb.from('agp').select('id').eq('vm_nr',a.vm).single();
+      if(!ag)continue;
+      await sb.from('monatswert').upsert({agp_id:ag.id,monat,quelle:'tagesstatistik',stueck:js},{onConflict:'agp_id,monat,quelle'});
+      hits++;
+    }
+    out.innerHTML='<div class="card status-ok">✓ Tagesstatistik: '+hits+' AGP für '+monat.slice(0,7)+' aktualisiert (Tages-Puls-Basis wächst).</div>';
+  }catch(e){out.innerHTML='<div class="card status-warn">Fehler: '+e.message+'</div>';}
+}
+window.importTS=importTS;
+</script>
+</body>
+</html>
