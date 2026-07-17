@@ -226,12 +226,14 @@ details[open]{background:#fff}
 <main>
   <!-- ============ DASHBOARD ============ -->
   <section class="view on" id="v-dash">
+    <h2 class="sect" style="margin-top:0">Führungsradar</h2>
     <div class="grid4">
       <div class="card kpi"><div class="lbl">Ø Index</div><div class="val" id="k-avg">–</div><div class="sub" id="k-avg-sub"></div></div>
-      <div class="card kpi"><div class="lbl">Auf Kurs Höchststufe</div><div class="val" id="k-max">–</div><div class="sub">von <span id="k-total"></span> AGP</div></div>
-      <div class="card kpi"><div class="lbl">Stärkstes Momentum</div><div class="val" id="k-mom" style="font-size:19px">–</div><div class="sub" id="k-mom-sub"></div></div>
-      <div class="card kpi"><div class="lbl">Warnungen</div><div class="val" id="k-warn">–</div><div class="sub">Pfad kritisch / Rückzahlung</div></div>
+      <div class="card kpi"><div class="lbl">Fixum gesichert</div><div class="val" id="k-max">–</div><div class="sub">von <span id="k-total"></span> AGP — Mindestpfad, kein Endziel</div></div>
+      <div class="card kpi"><div class="lbl">Wachstumszonen</div><div class="val" id="k-zonen" style="font-size:20px">–</div><div class="sub">ab 5.000 · ab 7.500 · Richtung 10.000</div></div>
+      <div class="card kpi"><div class="lbl">Warnsignale</div><div class="val" id="k-warn">–</div><div class="sub">Pfad kritisch / Rückzahlung</div></div>
     </div>
+    <div class="card" id="radarText"></div>
     <h2 class="sect">Frühwarnungen</h2>
     <div class="card" id="alerts"></div>
     <h2 class="sect">Movers des Monats</h2>
@@ -247,6 +249,8 @@ details[open]{background:#fff}
     <div class="card" id="ligen"></div>
     <h2 class="sect">Saisonalität</h2>
     <div class="card" id="saison"></div>
+    <h2 class="sect">Diese Woche sinnvoll</h2>
+    <div class="card" id="schritte"></div>
   </section>
 
   <!-- ============ KURSE / LISTE ============ -->
@@ -254,10 +258,10 @@ details[open]{background:#fff}
     <div class="toolbar">
       <input type="search" id="q" placeholder="AGP suchen …" aria-label="AGP suchen">
       <select id="sortSel" aria-label="Sortierung">
-        <option value="index">Sortierung: Index</option>
-        <option value="delta">Sortierung: Entwicklung</option>
-        <option value="kum">Sortierung: Kumulierte AP</option>
-        <option value="name">Sortierung: Name</option>
+        <option value="index">Nach Index sortieren</option>
+        <option value="delta">Nach Momentum sortieren</option>
+        <option value="kum">Nach kumulierter AP sortieren</option>
+        <option value="name">Nach Name sortieren</option>
       </select>
     </div>
     <div id="liste"></div>
@@ -301,7 +305,8 @@ details[open]{background:#fff}
     </label>
     <div id="impOut"></div>
     <div class="card" id="seedCard" style="display:none">
-      <p style="font-size:14.5px;margin-bottom:10px">Datenbank ist leer. Du kannst die <b>22 AGP vom Stand 30.06.2026</b> als Startbestand einspielen:</p>
+      <h2 class="sect" style="margin-top:0">Noch keine AGP-Daten</h2>
+      <p style="font-size:14.5px;margin-bottom:10px">Drei Dateien treiben das System: das <b>Wertungsblatt</b> (monatlich — Provisionen, Fixum, Einzelsätze), die <b>Tagesstatistik</b> (täglich — dein Puls) und der <b>Wettbewerb</b> (monatlich — Rang). Zum Kennenlernen kannst du den Startbestand vom 30.06.2026 einspielen:</p>
       <button class="btn-primary" onclick="seedDB()">Startbestand (Juni 2026) einspielen</button>
     </div>
   </section>
@@ -321,8 +326,8 @@ details[open]{background:#fff}
 </div>
 
 <nav class="bottom" aria-label="Hauptnavigation">
-  <button data-v="dash" class="on">Dashboard</button>
-  <button data-v="liste">Kurse</button>
+  <button data-v="dash" class="on">Übersicht</button>
+  <button data-v="liste">AGP</button>
   <button data-v="portfolio">Portfolio</button>
   <button data-v="vergleich">Vergleich</button>
   <button data-v="import" id="navImport">Import</button>
@@ -340,6 +345,7 @@ const CFG = {
   zielpfadMonat: 3175,
   jahresziel: 38100,
   benchmarkErfahren: 5000,
+  perfKurve: [[0,0],[1588,25],[3175,55],[5000,70],[7500,85],[10000,95],[12500,100]], // Fixum-Deckel = 55 Pkt, Top-Zone 10k = 95
   gewichte: { perf:.35, entw:.25, wirt:.25, stab:.10, potz:.05 },
   phasenFaktor: { onboarding:null, aufbau:.6, entwicklung:.85, etabliert:1, top:1, stabilisierung:1, sanierung:1 },
   phasenLabel: { onboarding:'Onboarding', aufbau:'Aufbauphase', entwicklung:'Entwicklungsphase', etabliert:'Etabliert', top:'Top-Performer', stabilisierung:'Stabilisierung', sanierung:'Sanierungsphase' },
@@ -418,7 +424,7 @@ function compute(a){
   /* Performance */
   const p3=avg(m.slice(-Math.min(3,n)));
   const Z=CFG.zielpfadMonat*(f||1);
-  const perf=piecewise(p3,[[0,0],[Z*.5,35],[Z,70],[CFG.benchmarkErfahren*(f||1),85],[8000*(f||1),100]]);
+  const perf=piecewise(p3,CFG.perfKurve.map(([x,y])=>[x*(f||1),y]));
 
   /* Entwicklung */
   let sa=null, sb=null;
@@ -496,6 +502,15 @@ function compute(a){
 let ALL = [];
 function recompute(a){ a.c=compute(a); }
 
+/* ---------- Zielstufen (Fixum-Deckel ist Mindestpfad, Zielbild 10.000 €) ---------- */
+function zielstufe(p3){
+  if(p3<3175)return {stufe:'Fixum-Pfad',txt:'Erstes Ziel: Fixum-Pfad sichern — Ø 3.175 €/Monat.'};
+  if(p3<5000)return {stufe:'Basis gesichert',txt:'Basis gesichert. Nächstes Ziel: 5.000 € Monatsprovision stabilisieren.'};
+  if(p3<7500)return {stufe:'Gesunder AGP-Pfad',txt:'Gesunder AGP-Pfad. Nächstes Ziel: 7.500 € Wachstumszone.'};
+  if(p3<10000)return {stufe:'Starker Performer',txt:'Starker Performer. Nächstes Ziel: 10.000 € Top-Performer-Zone.'};
+  return {stufe:'Top-Performer-Zone',txt:'Top-Performer-Zone erreicht. Fokus: Stabilität, Qualität, Skalierung.'};
+}
+
 /* ---------- SVG-Helfer ---------- */
 function sparkSVG(m,w=560,h=54){
   const mx=Math.max(...m,1), mn=Math.min(...m,0);
@@ -531,34 +546,58 @@ function countUp(el,target,dec=1,dur=900){
     if(p<1)requestAnimationFrame(step);})(t0);
 }
 function renderDash(){
+  if(!ALL.length)return;
   const idxAvg=avg(ALL.map(a=>a.c.index));
   countUp(document.getElementById('k-avg'),idxAvg);
   document.getElementById('k-avg-sub').textContent='über '+ALL.length+' Agenturpartner';
-  const onMax=ALL.filter(a=>a.c.quote>=1).length;
-  document.getElementById('k-max').textContent=onMax;
+  const ges=ALL.filter(a=>a.c.quote>=1).length;
+  document.getElementById('k-max').textContent=ges;
   document.getElementById('k-total').textContent=ALL.length;
-  const top=[...ALL].sort((x,y)=>y.c.deltaPct-x.c.deltaPct)[0];
-  document.getElementById('k-mom').textContent=top.name.split(' ').slice(-1)[0];
-  document.getElementById('k-mom-sub').textContent=(top.c.deltaPct>0?'+':'')+fmt(top.c.deltaPct)+' % (3M vs. 3M)';
-  document.getElementById('k-warn').textContent=ALL.filter(a=>a.c.flagAlarm||a.c.quote<0.35).length;
-
+  const z5=ALL.filter(a=>a.c.p3>=5000).length,z75=ALL.filter(a=>a.c.p3>=7500).length,z10=ALL.filter(a=>a.c.p3>=10000).length;
+  document.getElementById('k-zonen').textContent=z5+' · '+z75+' · '+z10;
+  const alerts=ALL.flatMap(alertsFor);
+  document.getElementById('k-warn').textContent=new Set(alerts.filter(x=>x.sev>=2).map(x=>x.vm)).size;
+  /* Radar-Satz in Alltagssprache */
+  const momUp=ALL.filter(a=>a.c.deltaPct>=5).length;
+  const kipp=ALL.filter(a=>a.c.fixF<a.fixA-200).length;
+  const prio=Math.max(alerts.filter(x=>x.sev>=3).length, alerts.length?1:0);
+  document.getElementById('radarText').innerHTML=
+   '<b style="font-family:var(--font-display)">Wo diesen Monat hinschauen:</b> '
+   +momUp+' AGP '+(momUp===1?'gewinnt':'gewinnen')+' Momentum · '
+   +kipp+' '+(kipp===1?'Pfad kippt':'Pfade kippen')+' Richtung Unterstufe · '
+   +prio+' Gespräch'+(prio===1?'':'e')+' diese Woche priorisieren.';
+  /* Movers — mit Treiber und Impuls */
+  const DL={perf:'Performance',entw:'Entwicklung',wirt:'Fixum-Pfad',stab:'Stabilität',potz:'Potenzial'};
   const sorted=[...ALL].sort((x,y)=>y.c.deltaPct-x.c.deltaPct);
   const movers=[...sorted.slice(0,3),...sorted.slice(-3)];
-  document.getElementById('movers').innerHTML=movers.map(a=>`
-    <div class="mover" onclick="openDetail('${a.vm}')">
-      <span class="nm">${a.name}</span>
-      <span class="mono ${a.c.deltaPct>=0?'delta up':'delta down'}">${a.c.deltaPct>=0?'▲ +':'▼ '}${fmt(a.c.deltaPct)} %</span>
-    </div>`).join('');
-
+  document.getElementById('movers').innerHTML=movers.map(a=>{
+    const act=Object.entries(a.c.scores).filter(([k,v])=>v!==null);
+    const top=act.reduce((b,x)=>x[1]>b[1]?x:b),low=act.reduce((b,x)=>x[1]<b[1]?x:b);
+    const up=a.c.deltaPct>=0;
+    return '<div class="mover" onclick="openDetail(\''+a.vm+'\')" style="display:block">'
+     +'<div style="display:flex;justify-content:space-between;gap:10px"><span class="nm">'+a.name+'</span>'
+     +'<span class="mono '+(up?'delta up':'delta down')+'">'+(up?'▲ +':'▼ ')+fmt(a.c.deltaPct)+' %</span></div>'
+     +'<div class="hinweis" style="margin-top:2px">'+(up?'Treiber: '+DL[top[0]]:'Bremse: '+DL[low[0]])+' · Impuls: '+String(a.c.imp[0]).split('.')[0]+'.</div></div>';
+  }).join('');
+  /* Fixum-Ampel */
   const g=ALL.filter(a=>a.c.quote>=1).length, r=ALL.filter(a=>a.c.flagAlarm||a.c.quote<0.35).length, y=ALL.length-g-r;
   document.getElementById('ampelBar').innerHTML=
-    `<div style="flex:${g};height:16px;background:var(--signal);border-radius:99px 0 0 99px" title="${g} gesichert"></div>
-     <div style="flex:${y};height:16px;background:var(--amber)" title="${y} auf dem Weg"></div>
-     <div style="flex:${r};height:16px;background:var(--alarm);border-radius:0 99px 99px 0" title="${r} kritisch"></div>`;
+    '<div style="flex:'+Math.max(g,.001)+';height:16px;background:var(--signal);border-radius:99px 0 0 99px" title="'+g+' gesichert"></div>'
+   +'<div style="flex:'+Math.max(y,.001)+';height:16px;background:var(--amber)" title="'+y+' auf dem Weg"></div>'
+   +'<div style="flex:'+Math.max(r,.001)+';height:16px;background:var(--alarm);border-radius:0 99px 99px 0" title="'+r+' kritisch"></div>';
   renderHeatmap();
   renderAlerts();
   renderLigen();
   renderSaison();
+  renderSchritte(alerts);
+}
+function renderSchritte(alerts){
+  const el=document.getElementById('schritte'); if(!el)return;
+  const top=[...alerts].sort((x,y)=>y.sev-x.sev).slice(0,3);
+  el.innerHTML= top.length
+   ? top.map(x=>{const a=ALL.find(z=>z.vm===x.vm); if(!a)return '';
+      return '<div class="mover" onclick="openDetail(\''+x.vm+'\')" style="display:block"><span class="nm">'+a.name+'</span><div class="hinweis" style="margin-top:2px">'+String(a.c.imp[0]).split('.').slice(0,2).join('.')+'.</div></div>';}).join('')
+   : '<p class="hinweis">Alles im Korridor — diese Woche ist Raum für Entwicklungsgespräche statt Feuerwehr.</p>';
 }
 
 /* ---------- Liste ---------- */
@@ -575,7 +614,7 @@ function renderListe(){
       <div>
         <div class="name">${a.name}</div>
         <div class="meta">
-          <span class="chip ${amp}">${c.quote>=1?'✓ Höchststufe':'Pfad '+fmt(c.quote*100)+' %'}</span>
+          <span class="chip ${amp}">${c.quote>=1?'✓ Fixum gesichert':'Pfad '+fmt(c.quote*100)+' %'}</span>
           <span class="chip neutral">${c.mom}</span>
           <span class="chip neutral">${c.vola}</span>
           ${c.dq!=='hoch'?`<span class="badge-dq">Daten: ${c.dq}</span>`:''}
@@ -648,10 +687,19 @@ function renderDetail(){
     <div class="stufen-lbl"><span>550 €</span><span>Stufenleiter</span><span>3.050 €</span></div>
     <div class="nextgoal ${c.flagAlarm?'alarm':''}">
       ${c.quote>=1
-        ? `<b>Höchststufe rechnerisch gesichert.</b> Jeder weitere Euro baut Puffer für den Folgezeitraum.`
-        : ns ? `<b>Nächste Stufe (${fmt(ns.fixum)} €):</b> Hochrechnung braucht noch ${fmt(ns.schwelle-c.hochr)} €. Bis zur Höchststufe: Ø ${fmt(Math.max(0,(CFG.jahresziel-c.kum))/Math.max(1,12-c.n))} €/Monat für die restlichen ${Math.max(1,12-c.n)} Monate.`
+        ? `<b>Fixum gesichert — das ist die Basis, nicht das Ziel.</b> ${zielstufe(c.p3).txt}`
+        : ns ? `<b>Nächste Stufe (${fmt(ns.fixum)} €):</b> Hochrechnung braucht noch ${fmt(ns.schwelle-c.hochr)} €. Bis zum Fixum-Deckel: Ø ${fmt(Math.max(0,(CFG.jahresziel-c.kum))/Math.max(1,12-c.n))} €/Monat für die restlichen ${Math.max(1,12-c.n)} Monate.`
         : ''}
     </div>
+  </div>
+
+  <div class="card">
+    <h2 class="sect" style="margin-top:0">Gesprächsvorbereitung</h2>
+    ${(()=>{const act=Object.entries(c.scores).filter(([k,v])=>v!==null);const DL={perf:'Performance',entw:'Entwicklung',wirt:'Fixum-Pfad',stab:'Stabilität',potz:'Potenzial'};const top=act.reduce((b,x)=>x[1]>b[1]?x:b),low=act.reduce((b,x)=>x[1]<b[1]?x:b);
+    return `<div class="grid2"><div class="wi-box"><div class="l">Stärkster Treiber</div><div class="v" style="font-size:17px">${DL[top[0]]}</div><div class="s">${fmt(top[1])} Punkte</div></div><div class="wi-box"><div class="l">Größter Hebel</div><div class="v" style="font-size:17px">${DL[low[0]]}</div><div class="s">${fmt(low[1])} Punkte</div></div></div>`;})()}
+    <div class="impuls" style="margin-top:10px"><b>Gesprächsimpuls:</b> ${c.imp[0]}</div>
+    <div class="nextgoal" style="margin-top:10px"><b>${zielstufe(c.p3).stufe}.</b> ${zielstufe(c.p3).txt}</div>
+    ${c.dq!=='hoch'?`<p class="hinweis">Datenlage: ${c.dq} — Aussagen entsprechend vorsichtig nutzen.</p>`:''}
   </div>
 
   <div class="card">
@@ -881,10 +929,10 @@ function openPraes(vm){
       <div class="card">
         <h2 class="sect" style="margin-top:0">Deine Stufenleiter</h2>
         <div class="stufen">${STAFFEL.map(([s])=>`<div class="st ${c.hochr>=s?'done':''}" data-s="${s}"></div>`).join('')}</div>
-        <div class="stufen-lbl"><span>550 €</span><span></span><span>3.050 € MAX</span></div>
+        <div class="stufen-lbl"><span>550 €</span><span></span><span>3.050 € Deckel</span></div>
         <div class="nextgoal">${c.quote>=1
-          ?`<b>Höchststufe gesichert, ${first}.</b> Jetzt geht es um Puffer und Wiederholbarkeit.`
-          :ns?`<b>Deine nächste Stufe (${fmt(ns.fixum)} €):</b> noch ${fmt(ns.schwelle-c.hochr)} € Hochrechnung. Das ist machbar — und die Leiter endet erst bei 3.050 €.`:''}</div>
+          ?`<b>Fixum gesichert, ${first}.</b> ${zielstufe(c.p3).txt}`
+          :ns?`<b>Deine nächste Stufe (${fmt(ns.fixum)} €):</b> noch ${fmt(ns.schwelle-c.hochr)} € Hochrechnung. Und der Fixum-Deckel ist nur die Basis — die eigentliche Reise geht Richtung 10.000 €.`:''}</div>
       </div>
       <div class="card">
         <h2 class="sect" style="margin-top:0">Deine Stärken</h2>
@@ -892,6 +940,7 @@ function openPraes(vm){
       </div>
       ${praesSparten(a)}
       ${praesLiga(a)}
+      ${praesBenchmark(a)}
       ${praesBadges(a)}
       <div class="card" id="pulsPraesBox" style="display:none"></div>
       <p class="hinweis" style="text-align:center">Diese Ansicht zeigt ausschließlich deine eigenen Daten. Keine Vergleiche, keine Rankings — dein Gegner ist die Stufenleiter.</p>
@@ -1278,9 +1327,9 @@ function wiUpdate(){
   const simTotal=baseTotal+zusatz;
   const stB=lookupFixum(baseTotal), stS=lookupFixum(simTotal);
   document.getElementById('wiBaseTotal').textContent=fmt(baseTotal)+' €';
-  document.getElementById('wiBaseStufe').textContent='→ Stufe '+fmt(stB)+' €'+(baseTotal>=CFG.jahresziel?' · MAX':'');
+  document.getElementById('wiBaseStufe').textContent='→ Stufe '+fmt(stB)+' €'+(baseTotal>=CFG.jahresziel?' · Deckel':'');
   document.getElementById('wiSimTotal').textContent=fmt(simTotal)+' €';
-  document.getElementById('wiSimStufe').textContent='→ Stufe '+fmt(stS)+' €'+(simTotal>=CFG.jahresziel?' · MAX':'');
+  document.getElementById('wiSimStufe').textContent='→ Stufe '+fmt(stS)+' €'+(simTotal>=CFG.jahresziel?' · Deckel':'');
   const jd=(stS-stB)*12;
   document.getElementById('wiDelta').innerHTML= restM===0
     ? '<span class="hinweis">Wertungsperiode fast abgeschlossen — Simulation greift ab der neuen Periode.</span>'
@@ -1295,7 +1344,7 @@ function wiUpdate(){
     pb.innerHTML=scen.map(([lbl,f,col])=>{
       const t=c.kum+c.p3*f*restM, st=lookupFixum(t);
       return '<div class="prog-row"><span>'+lbl+'</span><div class="b"><i style="width:'+Math.min(100,t/maxT*100)+'%;background:'+col+'"></i></div><span class="v">'+fmt(t)+' € → '+fmt(st)+'</span></div>';
-    }).join('')+'<p class="hinweis" style="margin-top:6px">Ziellinie Höchststufe: '+fmt(CFG.jahresziel)+' €. Prognose = Kumuliert + 3M-Schnitt × Restmonate × Faktor.</p>';
+    }).join('')+'<p class="hinweis" style="margin-top:6px">Fixum-Deckel: '+fmt(CFG.jahresziel)+' €. Prognose = Kumuliert + 3M-Schnitt × Restmonate × Faktor.</p>';
   }
 }
 window.wiUpdate=wiUpdate;
@@ -1305,7 +1354,7 @@ function alertsFor(a){
   const Z=CFG.zielpfadMonat*(c.f||1);
   if(a.uv<0||a.rz>0) out.push({sev:3,t:'<b>'+a.name+':</b> Unterverdienst/Rückzahlung aktiv ('+fmt(a.uv)+' € / '+fmt(a.rz)+' €). Sofortgespräch mit Zeitfenster + Wochenzielen.'});
   if(c.fixF<a.fixA-200) out.push({sev:3,t:'<b>'+a.name+':</b> Fixum-Absturz voraus — aktuell '+fmt(a.fixA)+' € → Hochrechnung '+fmt(c.fixF)+' € ('+fmt(c.fixF-a.fixA)+' €/Monat). Noch '+restM+' Monate Zeit zum Gegensteuern.'});
-  else if(c.quote<0.5&&c.n>=4) out.push({sev:2,t:'<b>'+a.name+':</b> Pfad bei '+fmt(c.quote*100)+' % — Höchststufe braucht Ø '+fmt(Math.max(0,CFG.jahresziel-c.kum)/Math.max(1,restM))+' €/Monat für die Restlaufzeit.'});
+  else if(c.quote<0.5&&c.n>=4) out.push({sev:2,t:'<b>'+a.name+':</b> Pfad bei '+fmt(c.quote*100)+' % — Fixum-Deckel braucht Ø '+fmt(Math.max(0,CFG.jahresziel-c.kum)/Math.max(1,restM))+' €/Monat für die Restlaufzeit.'});
   const m=a.m;
   if(m.length>=2&&m[m.length-1]<Z*0.5&&m[m.length-2]<Z*0.5&&restM<=5&&c.quote<1)
     out.push({sev:2,t:'<b>'+a.name+':</b> Zwei schwache Monate in Folge, nur noch '+restM+' Monate Restlaufzeit. Jetzt intervenieren, nicht am Periodenende.'});
@@ -1392,6 +1441,17 @@ function renderLigen(){
     +'</div>').join('')
    +'<p class="hinweis">Liga = Hochrechnungs-Niveau. In der AGP-Ansicht erscheint nur die eigene Liga-Position — nie fremde Zahlen.</p>';
 }
+function praesBenchmark(a){
+  if(ALL.length<5) return ''; /* Kleine Vergleichsgruppen: Vergleich unterdrücken */
+  const vals=ALL.map(x=>x.c.p3).sort((x,y)=>x-y);
+  const below=vals.filter(v=>v<a.c.p3).length;
+  const pct=Math.round(below/ALL.length*100);
+  const med=vals[Math.floor(vals.length/2)];
+  return '<div class="card"><h2 class="sect" style="margin-top:0">Deine Einordnung <span class="badge-dq" style="float:right">anonymisiert</span></h2>'
+   +'<div class="kpi"><div class="lbl">3M-Schnitt im Teamvergleich</div><div class="val" style="font-size:24px">stärker als '+pct+' %</div>'
+   +'<div class="sub">Teammedian: '+fmt(med)+' €/Monat · Top-Performer-Zone: 10.000 €</div></div>'
+   +'<p class="hinweis">Keine Namen, keine Einzelwerte anderer — nur deine Position im Feld.</p></div>';
+}
 function praesLiga(a){
   const lp=ligaPos(a);
   if(lp.of<2) return '';
@@ -1443,10 +1503,10 @@ function analyst(a){
   const best=Math.max(...a.m);
   pool.push('Dein Rekordmonat: '+fmt(best)+' €. Rekorde sind keine Erinnerungen — sie sind Zielmarken.');
   const ns=nextStufe(c.hochr);
-  if(ns)pool.push('Bis zur nächsten Stufe ('+fmt(ns.fixum)+' €) fehlen '+fmt(ns.schwelle-c.hochr)+' € Hochrechnung. Das ist kein Jahresprojekt — das ist ein guter Monat.');
+  if(ns)pool.push('Bis zur nächsten Fixum-Stufe ('+fmt(ns.fixum)+' €) fehlen '+fmt(ns.schwelle-c.hochr)+' € Hochrechnung. Das ist kein Jahresprojekt — das ist ein guter Monat.');
   if(d&&d.topFleck)pool.push('Stille Reserve: '+d.topFleck.lbl+'. Ein einziger Abschluss dort verändert dein Radar sichtbar — und dein Folge-Fixum unsichtbar mit.');
   if(c.vola==='volatil'||c.vola==='sehr volatil')pool.push('Deine Spitzen sind stark, deine Täler teuer. Konstanz ist die günstigste Provisionssteigerung, die es gibt.');
-  if(c.quote>=1)pool.push('Höchststufe gesichert. Champions verteidigen nicht — sie bauen Vorsprung. Jeder Euro ab jetzt ist Puffer fürs nächste Jahr.');
+  if(c.quote>=1)pool.push('Fixum gesichert — das war die Pflicht. Die Kür heißt 10.000 € Monatsprovision. Champions bauen Vorsprung, nicht Puffer.');
   if(c.scores.stab!==null&&c.scores.stab>=70&&c.scores.perf<60)pool.push('Deine Verlässlichkeit ist dein Fundament. Jetzt fehlt nur Volumen: mehr Termine, gleiche Qualität.');
   let h=0;for(const ch of a.vm)h=(h*31+ch.charCodeAt(0))%997;
   const wk=Math.ceil((((new Date())-new Date(new Date().getFullYear(),0,1))/86400000+1)/7);
@@ -1455,7 +1515,7 @@ function analyst(a){
 function erklaerHTML(a){
   const c=a.c;
   const rows=[
-   ['perf','Performance','Ø der letzten 3 Monatssummen ('+fmt(c.p3)+' €), bewertet auf einer Kurve: Zielpfad '+fmt(Math.round(CFG.zielpfadMonat*(c.f||1)))+' €/Monat = 70 Punkte, 8.000 € = 100.','Schnellster Hebel: Terminfrequenz erhöhen.'],
+   ['perf','Performance','Ø der letzten 3 Monatssummen ('+fmt(c.p3)+' €), bewertet auf einer Kurve: 3.175 € = 55 Punkte (Fixum-Deckel erreichbar), 5.000 € = 70, 7.500 € = 85, 10.000 € = 95 — die Kurve endet erst bei 12.500 €.','Schnellster Hebel: Terminfrequenz erhöhen.'],
    ['entw','Entwicklung','Aktueller 3M-Schnitt vs. vorherige 3 Monate ('+(c.deltaPct>=0?'+':'')+fmt(c.deltaPct)+' %) plus Trendlinie über die gesamte eigene Historie. Verglichen wird nur mit dir selbst.','Hebel: Wiederholbarkeit statt Einmal-Spitzen.'],
    ['wirt','Wirtschaftlichkeit','Hochrechnung '+fmt(c.hochr)+' € ÷ Jahresziel 38.100 € = '+fmt(c.quote*100)+' % Pfad-Quote. Bei 100 % ist die Höchststufe rechnerisch gesichert.','Hebel: Jeder Euro AP zählt doppelt — heute als Provision, nächstes Jahr als Fixum.'],
    ['stab','Stabilität','Schwankung der Monatswerte (CV '+(c.cv!==undefined?fmt1(c.cv*100)+' %':'—')+'); sehr schwache Monate kosten Zusatzpunkte.','Hebel: feste wöchentliche Einreichungsroutine.'],
