@@ -230,7 +230,7 @@ details[open]{background:#fff}
     <div class="grid4">
       <div class="card kpi"><div class="lbl">Ø Index</div><div class="val" id="k-avg">–</div><div class="sub" id="k-avg-sub"></div></div>
       <div class="card kpi"><div class="lbl">Fixum gesichert</div><div class="val" id="k-max">–</div><div class="sub">von <span id="k-total"></span> AGP — Mindestpfad, kein Endziel</div></div>
-      <div class="card kpi"><div class="lbl">Wachstumszonen</div><div class="val" id="k-zonen" style="font-size:20px">–</div><div class="sub">ab 5.000 · ab 7.500 · Richtung 10.000</div></div>
+      <div class="card kpi"><div class="lbl">Wachstumszonen</div><div class="val" id="k-zonen" style="font-size:20px">–</div><div class="sub">ab 5.000 · ab 10.000 · ab 20.000</div></div>
       <div class="card kpi"><div class="lbl">Warnsignale</div><div class="val" id="k-warn">–</div><div class="sub">Pfad kritisch / Rückzahlung</div></div>
     </div>
     <div class="card" id="radarText"></div>
@@ -345,7 +345,7 @@ const CFG = {
   zielpfadMonat: 3175,
   jahresziel: 38100,
   benchmarkErfahren: 5000,
-  perfKurve: [[0,0],[1588,25],[3175,55],[5000,70],[7500,85],[10000,95],[12500,100]], // Fixum-Deckel = 55 Pkt, Top-Zone 10k = 95
+  perfKurve: [[0,0],[1588,25],[3175,55],[5000,70],[7500,80],[10000,85],[15000,90],[20000,95],[25000,100]], // Fixum-Deckel = 55 Pkt · Zielbild 25k
   gewichte: { perf:.35, entw:.25, wirt:.25, stab:.10, potz:.05 },
   phasenFaktor: { onboarding:null, aufbau:.6, entwicklung:.85, etabliert:1, top:1, stabilisierung:1, sanierung:1 },
   phasenLabel: { onboarding:'Onboarding', aufbau:'Aufbauphase', entwicklung:'Entwicklungsphase', etabliert:'Etabliert', top:'Top-Performer', stabilisierung:'Stabilisierung', sanierung:'Sanierungsphase' },
@@ -508,7 +508,9 @@ function zielstufe(p3){
   if(p3<5000)return {stufe:'Basis gesichert',txt:'Basis gesichert. Nächstes Ziel: 5.000 € Monatsprovision stabilisieren.'};
   if(p3<7500)return {stufe:'Gesunder AGP-Pfad',txt:'Gesunder AGP-Pfad. Nächstes Ziel: 7.500 € Wachstumszone.'};
   if(p3<10000)return {stufe:'Starker Performer',txt:'Starker Performer. Nächstes Ziel: 10.000 € Top-Performer-Zone.'};
-  return {stufe:'Top-Performer-Zone',txt:'Top-Performer-Zone erreicht. Fokus: Stabilität, Qualität, Skalierung.'};
+  if(p3<15000)return {stufe:'Top-Performer',txt:'Top-Performer-Zone erreicht. Nächstes Ziel: 15.000 € verstetigen.'};
+  if(p3<20000)return {stufe:'Elite-Zone',txt:'Elite-Zone. Nächstes Ziel: 20.000 € — das wurde hier schon geschafft.'};
+  return {stufe:'Ausnahmeleistung',txt:'Ausnahmeleistung. Richtung 25.000 € — Fokus: Skalierung, Qualität, Systeme.'};
 }
 
 /* ---------- SVG-Helfer ---------- */
@@ -553,8 +555,8 @@ function renderDash(){
   const ges=ALL.filter(a=>a.c.quote>=1).length;
   document.getElementById('k-max').textContent=ges;
   document.getElementById('k-total').textContent=ALL.length;
-  const z5=ALL.filter(a=>a.c.p3>=5000).length,z75=ALL.filter(a=>a.c.p3>=7500).length,z10=ALL.filter(a=>a.c.p3>=10000).length;
-  document.getElementById('k-zonen').textContent=z5+' · '+z75+' · '+z10;
+  const z5=ALL.filter(a=>a.c.p3>=5000).length,z10=ALL.filter(a=>a.c.p3>=10000).length,z20=ALL.filter(a=>a.c.p3>=20000).length;
+  document.getElementById('k-zonen').textContent=z5+' · '+z10+' · '+z20;
   const alerts=ALL.flatMap(alertsFor);
   document.getElementById('k-warn').textContent=new Set(alerts.filter(x=>x.sev>=2).map(x=>x.vm)).size;
   /* Radar-Satz in Alltagssprache */
@@ -932,7 +934,7 @@ function openPraes(vm){
         <div class="stufen-lbl"><span>550 €</span><span></span><span>3.050 € Deckel</span></div>
         <div class="nextgoal">${c.quote>=1
           ?`<b>Fixum gesichert, ${first}.</b> ${zielstufe(c.p3).txt}`
-          :ns?`<b>Deine nächste Stufe (${fmt(ns.fixum)} €):</b> noch ${fmt(ns.schwelle-c.hochr)} € Hochrechnung. Und der Fixum-Deckel ist nur die Basis — die eigentliche Reise geht Richtung 10.000 €.`:''}</div>
+          :ns?`<b>Deine nächste Stufe (${fmt(ns.fixum)} €):</b> noch ${fmt(ns.schwelle-c.hochr)} € Hochrechnung. Und der Fixum-Deckel ist nur die Basis — die eigentliche Reise geht Richtung 25.000 €.`:''}</div>
       </div>
       <div class="card">
         <h2 class="sect" style="margin-top:0">Deine Stärken</h2>
@@ -1449,7 +1451,7 @@ function praesBenchmark(a){
   const med=vals[Math.floor(vals.length/2)];
   return '<div class="card"><h2 class="sect" style="margin-top:0">Deine Einordnung <span class="badge-dq" style="float:right">anonymisiert</span></h2>'
    +'<div class="kpi"><div class="lbl">3M-Schnitt im Teamvergleich</div><div class="val" style="font-size:24px">stärker als '+pct+' %</div>'
-   +'<div class="sub">Teammedian: '+fmt(med)+' €/Monat · Top-Performer-Zone: 10.000 €</div></div>'
+   +'<div class="sub">Teammedian: '+fmt(med)+' €/Monat · Zielbild: 25.000 €</div></div>'
    +'<p class="hinweis">Keine Namen, keine Einzelwerte anderer — nur deine Position im Feld.</p></div>';
 }
 function praesLiga(a){
@@ -1506,7 +1508,7 @@ function analyst(a){
   if(ns)pool.push('Bis zur nächsten Fixum-Stufe ('+fmt(ns.fixum)+' €) fehlen '+fmt(ns.schwelle-c.hochr)+' € Hochrechnung. Das ist kein Jahresprojekt — das ist ein guter Monat.');
   if(d&&d.topFleck)pool.push('Stille Reserve: '+d.topFleck.lbl+'. Ein einziger Abschluss dort verändert dein Radar sichtbar — und dein Folge-Fixum unsichtbar mit.');
   if(c.vola==='volatil'||c.vola==='sehr volatil')pool.push('Deine Spitzen sind stark, deine Täler teuer. Konstanz ist die günstigste Provisionssteigerung, die es gibt.');
-  if(c.quote>=1)pool.push('Fixum gesichert — das war die Pflicht. Die Kür heißt 10.000 € Monatsprovision. Champions bauen Vorsprung, nicht Puffer.');
+  if(c.quote>=1)pool.push('Fixum gesichert — das war die Pflicht. Die Kür geht Richtung 25.000 € Monatsprovision — 20.000 wurden hier schon erreicht. Champions bauen Vorsprung, nicht Puffer.');
   if(c.scores.stab!==null&&c.scores.stab>=70&&c.scores.perf<60)pool.push('Deine Verlässlichkeit ist dein Fundament. Jetzt fehlt nur Volumen: mehr Termine, gleiche Qualität.');
   let h=0;for(const ch of a.vm)h=(h*31+ch.charCodeAt(0))%997;
   const wk=Math.ceil((((new Date())-new Date(new Date().getFullYear(),0,1))/86400000+1)/7);
@@ -1515,7 +1517,7 @@ function analyst(a){
 function erklaerHTML(a){
   const c=a.c;
   const rows=[
-   ['perf','Performance','Ø der letzten 3 Monatssummen ('+fmt(c.p3)+' €), bewertet auf einer Kurve: 3.175 € = 55 Punkte (Fixum-Deckel erreichbar), 5.000 € = 70, 7.500 € = 85, 10.000 € = 95 — die Kurve endet erst bei 12.500 €.','Schnellster Hebel: Terminfrequenz erhöhen.'],
+   ['perf','Performance','Ø der letzten 3 Monatssummen ('+fmt(c.p3)+' €), bewertet auf einer Kurve: 3.175 € = 55 Punkte (Fixum-Deckel erreichbar), 5.000 € = 70, 10.000 € = 85, 20.000 € = 95 — die Kurve endet erst bei 25.000 €.','Schnellster Hebel: Terminfrequenz erhöhen.'],
    ['entw','Entwicklung','Aktueller 3M-Schnitt vs. vorherige 3 Monate ('+(c.deltaPct>=0?'+':'')+fmt(c.deltaPct)+' %) plus Trendlinie über die gesamte eigene Historie. Verglichen wird nur mit dir selbst.','Hebel: Wiederholbarkeit statt Einmal-Spitzen.'],
    ['wirt','Wirtschaftlichkeit','Hochrechnung '+fmt(c.hochr)+' € ÷ Jahresziel 38.100 € = '+fmt(c.quote*100)+' % Pfad-Quote. Bei 100 % ist die Höchststufe rechnerisch gesichert.','Hebel: Jeder Euro AP zählt doppelt — heute als Provision, nächstes Jahr als Fixum.'],
    ['stab','Stabilität','Schwankung der Monatswerte (CV '+(c.cv!==undefined?fmt1(c.cv*100)+' %':'—')+'); sehr schwache Monate kosten Zusatzpunkte.','Hebel: feste wöchentliche Einreichungsroutine.'],
