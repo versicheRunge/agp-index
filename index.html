@@ -197,6 +197,8 @@ h2.sect{font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:upper
       <div class="pbar" style="display:flex;gap:2px;background:none;height:auto" id="ampelBar"></div>
       <div class="legende"><span>● <b style="color:var(--signal)">Grün</b> Höchststufe gesichert</span><span>● <b style="color:var(--amber)">Amber</b> auf dem Weg</span><span>● <b style="color:var(--alarm)">Rot</b> kritisch</span></div>
     </div>
+    <h2 class="sect">Team-Sparten-Heatmap</h2>
+    <div class="card" id="heatmap"><p class="hinweis">Sparten-Daten erscheinen nach dem nächsten Wertungsblatt-Import.</p></div>
   </section>
 
   <!-- ============ KURSE / LISTE ============ -->
@@ -505,6 +507,7 @@ function renderDash(){
     `<div style="flex:${g};height:16px;background:var(--signal);border-radius:99px 0 0 99px" title="${g} gesichert"></div>
      <div style="flex:${y};height:16px;background:var(--amber)" title="${y} auf dem Weg"></div>
      <div style="flex:${r};height:16px;background:var(--alarm);border-radius:0 99px 99px 0" title="${r} kritisch"></div>`;
+  renderHeatmap();
 }
 
 /* ---------- Liste ---------- */
@@ -611,6 +614,13 @@ function renderDetail(){
       </div>`;}).join('')}
   </div>
 
+  <div class="card" id="spartenBox"></div>
+
+  <div class="card">
+    <h2 class="sect" style="margin-top:0">Deal-Analytik <span class="badge-dq" style="float:right">aus Einzelsätzen</span></h2>
+    <div id="dealsBox"><p class="hinweis">Lade Einzelsätze …</p></div>
+  </div>
+
   <div class="card">
     <h2 class="sect" style="margin-top:0">Coaching-Impulse</h2>
     ${c.imp.map(t=>`<div class="impuls">${t}</div>`).join('')}
@@ -636,6 +646,7 @@ function renderDetail(){
   <p class="hinweis">Berechnung: Index = Σ(Score × Gewicht) / Σ(aktive Gewichte). Fehlende Dimensionen verschlechtern den Index nie — sie werden transparent neugewichtet. Rating & Vergleiche sind intern und erscheinen nicht im Präsentationsmodus.</p>`;
 
   setTimeout(()=>{document.getElementById('pfadFill').style.width=Math.min(100,c.quote*100)+'%';},60);
+  renderSparten(a); loadDeals(a);
 }
 
 function setPhase(vm,p){ ov(vm).phase=p; saveOV(); const a=ALL.find(x=>x.vm===vm); recompute(a); renderDetail(); }
@@ -784,6 +795,7 @@ function openPraes(vm){
         <h2 class="sect" style="margin-top:0">Deine Stärken</h2>
         ${dimsSorted.slice(0,3).map(([k],i)=>`<div class="staerke"><span class="n">0${i+1}</span><span>${staerken[k]}</span></div>`).join('')}
       </div>
+      ${praesSparten(a)}
       <p class="hinweis" style="text-align:center">Diese Ansicht zeigt ausschließlich deine eigenen Daten. Keine Vergleiche, keine Rankings — dein Gegner ist die Stufenleiter.</p>
     </div>`;
   curVM=vm; show('praes'); setTimeout(()=>{startReplay();},350);
@@ -822,7 +834,7 @@ const MONL=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','
 const isoAddM=(iso,i)=>{const d=new Date(iso+'T00:00:00Z');d.setUTCMonth(d.getUTCMonth()+i);return d.toISOString().slice(0,7)+'-01';};
 
 async function loadData(){
-  const {data,error}=await sb.from('agp').select('*, monatswert(monat,quelle,gesamt)').eq('aktiv',true).order('name');
+  const {data,error}=await sb.from('agp').select('*, monatswert(monat,quelle,gesamt,sparten)').eq('aktiv',true).order('name');
   if(error){console.error(error);alert('Laden fehlgeschlagen: '+error.message);return;}
   ALL=(data||[]).map(a=>{
     const mw=(a.monatswert||[]).filter(x=>x.quelle==='datenblatt').sort((x,y)=>x.monat<y.monat?-1:1);
@@ -830,6 +842,8 @@ async function loadData(){
       sv:+a.sonderverrechnung||0,
       monate:mw.map(x=>MONL[+x.monat.slice(5,7)-1]), m:mw.map(x=>+x.gesamt||0),
       fixA:+a.fixum_aktuell||0,fixF:+a.fixum_folge||0,uv:+a.unterverdienst||0,rz:+a.rueckzahlung||0};
+    o.sp=mw.map(x=>x.sparten||null);
+    o.agpId=a.id;
     if(o.m.length) o.c=compute(o);
     return o;
   }).filter(a=>a.c);
@@ -898,6 +912,18 @@ async function importWB(file){
       const header=(A[gz+1]||[]).slice(1,13).filter(x=>x!==null&&x!=='#N/A');
       const n=header.length;
       const summe=(A[gz+2]||[]).slice(1,1+n).map(v=>+v||0);
+      /* Sparten-Blöcke (Leben Z10-15, SHKR Z21-26, Verlängerung Z32-36) */
+      const LB=['risiko','kapital','rente','riester','bu','uzv'];
+      const SH=['rs','hp','sach','gewerbe','unfall','kfz'];
+      const VL=['verl_rs','verl_hp','verl_sach','verl_gewerbe','verl_unfall'];
+      const sparten=[];
+      for(let i=0;i<n;i++){
+        const o={};
+        LB.forEach((k,j)=>o[k]=+(A[9+j]?.[1+i])||0);
+        SH.forEach((k,j)=>o[k]=+(A[20+j]?.[1+i])||0);
+        VL.forEach((k,j)=>o[k]=+(A[31+j]?.[1+i])||0);
+        sparten.push(o);
+      }
       let svTotal=0;
       for(let r=gz+3;r<gz+7;r++) if(String(A[r]?.[0]||'').startsWith('Sonderverrech')){svTotal=+(A[r]?.[13])||0;break;}
       let fixA=0,fixF=0,uv=0,rz=0;
@@ -919,7 +945,7 @@ async function importWB(file){
           es.push({vsnr:String(row[0]||''),sparte:String(row[1]||''),buchung:d(row[2]),abrechnung:d(row[3]),betrag:+row[5]||0});
         }
       }
-      parsed.push({vm,name:agpName,wbISO,n,summe,svTotal,fixA,fixF,uv,rz,es});
+      parsed.push({vm,name:agpName,wbISO,n,summe,sparten,svTotal,fixA,fixF,uv,rz,es});
     }
     pendingWB=parsed;
     out.innerHTML='<div class="card"><h2 class="sect" style="margin-top:0">Vorschau · '+parsed.length+' AGP erkannt</h2>'
@@ -937,7 +963,7 @@ async function commitWB(){
       fixum_aktuell:p.fixA,fixum_folge:p.fixF,unterverdienst:p.uv,rueckzahlung:p.rz,sonderverrechnung:p.svTotal},
       {onConflict:'vm_nr'}).select().single();
     if(error){out.innerHTML='<div class="card status-warn">Fehler '+p.name+': '+error.message+'</div>';return;}
-    const rows=p.summe.map((v,i)=>({agp_id:row.id,monat:isoAddM(p.wbISO,i),quelle:'datenblatt',gesamt:v}));
+    const rows=p.summe.map((v,i)=>({agp_id:row.id,monat:isoAddM(p.wbISO,i),quelle:'datenblatt',gesamt:v,sparten:p.sparten[i]||null}));
     const {error:e2}=await sb.from('monatswert').upsert(rows,{onConflict:'agp_id,monat,quelle'});
     if(e2){out.innerHTML='<div class="card status-warn">Fehler Monatswerte '+p.name+': '+e2.message+'</div>';return;}
     if(p.es.length){
@@ -1018,6 +1044,115 @@ async function importTS(file){
   }catch(e){out.innerHTML='<div class="card status-warn">Fehler: '+e.message+'</div>';}
 }
 window.importTS=importTS;
+
+/* =====================================================================
+   Welle 2 · Sparten-DNA & Deal-Analytik
+===================================================================== */
+const KATS=[
+ {k:'bu',lbl:'BU',src:['bu']},
+ {k:'lebenav',lbl:'Leben/AV',src:['kapital','rente','riester','uzv']},
+ {k:'risiko',lbl:'Risiko',src:['risiko']},
+ {k:'unfall',lbl:'Unfall',src:['unfall','verl_unfall']},
+ {k:'gewerbe',lbl:'Gewerbe',src:['gewerbe','verl_gewerbe']},
+ {k:'kfz',lbl:'KFZ',src:['kfz']},
+ {k:'sach',lbl:'Sach',src:['sach','verl_sach']},
+ {k:'rshp',lbl:'RS/HP',src:['rs','hp','verl_rs','verl_hp']}
+];
+const HIER=['bu','lebenav','risiko','unfall','gewerbe','kfz','sach','rshp']; // Wert-Priorität (BU > LV > Risiko > Unfall > Sach)
+
+function katTotals(a){
+  if(!a.sp||!a.sp.some(x=>x)) return null;
+  const t={},l3={}; KATS.forEach(K=>{t[K.k]=0;l3[K.k]=0;});
+  a.sp.forEach((sRow,i)=>{ if(!sRow)return;
+    KATS.forEach(K=>{const v=K.src.reduce((x,f)=>x+(+sRow[f]||0),0); t[K.k]+=v; if(i>=a.sp.length-3) l3[K.k]+=v;});});
+  const sum=Object.values(t).reduce((x,y)=>x+y,0);
+  return sum>0? {t,l3,sum} : null;
+}
+function spartenDNA(a){
+  const kt=katTotals(a); if(!kt) return null;
+  const {t,l3,sum}=kt;
+  const shares=KATS.map(K=>Math.max(0,t[K.k])/sum);
+  const active=KATS.filter(K=>t[K.k]>=150);
+  const H=-shares.filter(p=>p>0).reduce((x,p)=>x+p*Math.log(p),0)/Math.log(KATS.length);
+  const allr=Math.round(clamp(active.length/KATS.length*60 + H*40,0,100));
+  const flecken=HIER.filter(k=>l3[k]<50).map(k=>KATS.find(K=>K.k===k));
+  let topFleck=flecken[0]||null, fleckWert=0;
+  if(topFleck){
+    const vals=ALL.map(b=>{const bt=katTotals(b); return bt&&bt.t[topFleck.k]>=150? bt.t[topFleck.k]/b.m.length:null;})
+      .filter(v=>v!==null).sort((x,y)=>x-y);
+    if(vals.length) fleckWert=vals[Math.floor(vals.length/2)]*3;
+  }
+  return {t,l3,sum,shares,active,allr,flecken,topFleck,fleckWert};
+}
+function radarSVG(d){
+  const C=110,R=84,N=KATS.length;
+  const maxSh=Math.max(...d.shares,0.0001);
+  const pt=(i,r)=>{const ang=-Math.PI/2+i*2*Math.PI/N;return [C+Math.cos(ang)*r,C+Math.sin(ang)*r];};
+  const poly=d.shares.map((sh,i)=>pt(i,Math.sqrt(sh/maxSh)*R).map(v=>v.toFixed(1)).join(',')).join(' ');
+  return '<svg viewBox="0 0 220 224" style="width:100%;max-width:240px;margin:0 auto;display:block" role="img" aria-label="Sparten-Radar">'
+   +[.33,.66,1].map(f=>'<polygon points="'+KATS.map((_,i)=>pt(i,R*f).map(v=>v.toFixed(1)).join(',')).join(' ')+'" fill="none" stroke="var(--linie)"/>').join('')
+   +KATS.map((K,i)=>{const[x,y]=pt(i,R+16);return '<text x="'+x.toFixed(0)+'" y="'+(+y.toFixed(0)+3)+'" font-size="9.5" font-family="Space Mono" fill="#4A4640" text-anchor="middle">'+K.lbl+'</text>';}).join('')
+   +'<polygon points="'+poly+'" fill="rgba(14,90,70,.28)" stroke="var(--signal)" stroke-width="2" stroke-linejoin="round"/></svg>';
+}
+function renderSparten(a){
+  const box=document.getElementById('spartenBox'); if(!box)return;
+  const d=spartenDNA(a);
+  if(!d){box.innerHTML='<h2 class="sect" style="margin-top:0">Sparten-DNA</h2><p class="hinweis">Noch keine Sparten-Daten für diesen AGP. Lade das Wertungsblatt einmal (neu) ins Import-Center — dann erscheinen hier Radar, Allrounder-Score und der wertvollste blinde Fleck.</p>';return;}
+  box.innerHTML='<h2 class="sect" style="margin-top:0">Sparten-DNA <span class="badge-dq" style="float:right">Allrounder-Score '+d.allr+'/100</span></h2>'
+   +'<div class="grid2" style="align-items:center">'+radarSVG(d)+'<div>'
+   +KATS.map(K=>{const sh=Math.max(0,d.t[K.k])/d.sum;
+     return '<div class="dim" style="margin-bottom:7px"><div class="top"><span>'+K.lbl+'</span><span class="score">'+(d.t[K.k]>=50?fmt(d.t[K.k])+' €':'—')+'</span></div><div class="bar"><i style="width:'+Math.min(100,sh*200)+'%"></i></div></div>';}).join('')
+   +'</div></div>'
+   +(d.topFleck
+     ?'<div class="nextgoal" style="margin-top:12px"><b>Wertvollster blinder Fleck: '+d.topFleck.lbl+'</b> — in den letzten 3 Monaten hier praktisch keine AP. Aktive Kollegen holen in dieser Kategorie im Median ~'+fmt(d.fleckWert)+' € AP pro 3 Monate <span class="badge-dq">Schätzung aus Teamdaten</span></div>'
+     :'<div class="nextgoal" style="margin-top:12px"><b>Keine weißen Flecken.</b> Alle Kernkategorien in den letzten 3 Monaten bedient — echte Rundum-Beratung.</div>');
+}
+async function loadDeals(a){
+  const box=document.getElementById('dealsBox'); if(!box)return;
+  try{
+    let id=a.agpId;
+    if(!id){const {data:ag}=await sb.from('agp').select('id').eq('vm_nr',a.vm).single(); id=ag?.id;}
+    if(!id){box.innerHTML='<p class="hinweis">Keine Datenbank-Verbindung.</p>';return;}
+    const {data:es}=await sb.from('einzelsatz').select('sparte,buchung,betrag').eq('agp_id',id).limit(8000);
+    if(!es||!es.length){box.innerHTML='<p class="hinweis">Noch keine Einzelsätze — beim nächsten Wertungsblatt-Import werden sie automatisch mitgelesen.</p>';return;}
+    const wbMon=(a.wb||'').slice(0,7);
+    const pos=es.filter(x=>+x.betrag>0);
+    const neg=es.filter(x=>+x.betrag<0 && String(x.buchung||'').slice(0,7)!==wbMon);
+    const posSum=pos.reduce((x,y)=>x+ +y.betrag,0);
+    const stornoQ=posSum>0? Math.abs(neg.reduce((x,y)=>x+ +y.betrag,0))/posSum*100:0;
+    const best=pos.reduce((b,x)=>+x.betrag>((b&&+b.betrag)||0)?x:b,null);
+    const dates=es.map(x=>x.buchung).filter(Boolean).sort();
+    const weeks=Math.max(1,(new Date(dates[dates.length-1])-new Date(dates[0]))/604800000);
+    const perWeek=pos.length/weeks;
+    const sQcls=stornoQ<=2?'pos':stornoQ<=8?'neg':'alarm';
+    box.innerHTML='<div class="grid2">'
+     +'<div class="kpi"><div class="lbl">Rekord-Deal</div><div class="val" style="font-size:24px">'+(best?fmt(+best.betrag)+' €':'—')+'</div><div class="sub">'+(best?(best.sparte||'')+' · '+(best.buchung||''):'')+'</div></div>'
+     +'<div class="kpi"><div class="lbl">Ø-Ticket</div><div class="val" style="font-size:24px">'+(pos.length?fmt(posSum/pos.length)+' €':'—')+'</div><div class="sub">'+pos.length+' positive Buchungen</div></div>'
+     +'<div class="kpi"><div class="lbl">Abschlüsse / Woche</div><div class="val" style="font-size:24px">'+perWeek.toLocaleString('de-DE',{maximumFractionDigits:1})+'</div><div class="sub">über '+Math.round(weeks)+' Wochen</div></div>'
+     +'<div class="kpi"><div class="lbl">Storno-Proxy</div><div class="val" style="font-size:24px"><span class="chip '+sQcls+'" style="font-size:16px;padding:5px 12px">'+stornoQ.toLocaleString('de-DE',{maximumFractionDigits:1})+' %</span></div><div class="sub">Rückbuchungen ohne Periodenstart-Verrechnung</div></div>'
+     +'</div>';
+  }catch(e){box.innerHTML='<p class="hinweis">Einzelsätze konnten nicht geladen werden: '+e.message+'</p>';}
+}
+function renderHeatmap(){
+  const el=document.getElementById('heatmap'); if(!el)return;
+  const rows=ALL.map(a=>({a,kt:katTotals(a)})).filter(r=>r.kt);
+  if(!rows.length){el.innerHTML='<p class="hinweis">Sparten-Daten erscheinen nach dem nächsten Wertungsblatt-Import (Import-Center → Wertungsblatt).</p>';return;}
+  const total=ALL.reduce((x,a)=>x+a.c.kum,0);
+  const top3=[...ALL].sort((x,y)=>y.c.kum-x.c.kum).slice(0,3).reduce((x,a)=>x+a.c.kum,0)/Math.max(total,1)*100;
+  el.innerHTML='<div style="overflow-x:auto"><table class="imp-table"><tr><th>AGP</th>'
+   +KATS.map(K=>'<th class="mono">'+K.lbl+'</th>').join('')+'</tr>'
+   +rows.map(({a,kt})=>'<tr><td style="cursor:pointer;font-weight:600" onclick="openDetail(\''+a.vm+'\')">'+a.name.split(' ').slice(-1)[0]+'</td>'
+     +KATS.map(K=>{const sh=Math.max(0,kt.t[K.k])/kt.sum; const op=Math.min(.85,Math.sqrt(sh)*1.5);
+       return '<td class="mono" style="background:rgba(14,90,70,'+(kt.t[K.k]>=50?op:0)+');color:'+(op>.5?'#fff':'inherit')+'">'+(kt.t[K.k]>=50?fmt(kt.t[K.k]):'·')+'</td>';}).join('')+'</tr>').join('')
+   +'</table></div><p class="hinweis">Zellwert = kumulierte AP je Kategorie · Farbe = Anteil an der eigenen Gesamt-AP · „·" = weißer Fleck. Klumpenrisiko: Die Top-3 erwirtschaften <b>'+fmt(top3)+' %</b> der Team-AP.</p>';
+}
+function praesSparten(a){
+  const d=spartenDNA(a); if(!d) return '';
+  return '<div class="card"><h2 class="sect" style="margin-top:0">Deine Sparten-DNA</h2>'+radarSVG(d)
+   +(d.topFleck
+     ?'<div class="nextgoal" style="margin-top:12px"><b>Dein nächstes Spielfeld: '+d.topFleck.lbl+'.</b> Da liegt Provision, die aktuell liegen bleibt — und die Leiter kennt nur eine Richtung.</div>'
+     :'<div class="nextgoal" style="margin-top:12px"><b>Volle Bandbreite.</b> Du bespielst alle Kernkategorien — Allrounder-Score '+d.allr+'/100.</div>')+'</div>';
+}
 </script>
 </body>
 </html>
