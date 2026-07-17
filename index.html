@@ -167,6 +167,16 @@ h2.sect{font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:upper
 .imp-table td.mono,.imp-table th.mono{font-family:var(--font-mono);text-align:right}
 .status-ok{color:var(--signal);font-weight:700}
 .status-warn{color:var(--amber);font-weight:700}
+/* ---- Welle 6/7 ---- */
+.celeb{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(26,24,22,.45)}
+.celeb .cbox{background:var(--kalk);border-radius:14px;padding:26px 30px;text-align:center;max-width:330px;animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+.celeb .cbox h3{font-size:22px;font-weight:800;margin-bottom:6px}
+.celeb .cbox p{font-size:14.5px;color:var(--russ-70)}
+@keyframes pop{from{transform:scale(.55);opacity:0}}
+details{border:1px solid var(--linie);border-radius:8px;padding:10px 13px;margin-bottom:8px;background:var(--kalk)}
+details summary{cursor:pointer;font-size:14px;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details[open]{background:#fff}
 /* ---- Welle 4/5 ---- */
 .gh{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,11px);gap:3px;justify-content:start;overflow-x:auto;padding-bottom:4px}
 .gh i{width:11px;height:11px;border-radius:2.5px;background:var(--kalk-tief)}
@@ -235,6 +245,8 @@ h2.sect{font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:upper
     <div class="card" id="heatmap"><p class="hinweis">Sparten-Daten erscheinen nach dem nächsten Wertungsblatt-Import.</p></div>
     <h2 class="sect">Ligen</h2>
     <div class="card" id="ligen"></div>
+    <h2 class="sect">Saisonalität</h2>
+    <div class="card" id="saison"></div>
   </section>
 
   <!-- ============ KURSE / LISTE ============ -->
@@ -546,6 +558,7 @@ function renderDash(){
   renderHeatmap();
   renderAlerts();
   renderLigen();
+  renderSaison();
 }
 
 /* ---------- Liste ---------- */
@@ -605,6 +618,7 @@ function renderDetail(){
         <span class="chip neutral">VM ${a.vm}</span>
         <span class="chip ${c.flagAlarm?'alarm':'neutral'}">${c.rating}</span>
         <span class="badge-dq">Datenqualität: ${c.dq}</span>
+        ${badges(a).map(([e,l])=>`<span class="chip pos">${e} ${l}</span>`).join('')}
       </div>
     </div>
     <div class="idx-big" id="idxBig">${fmt1(c.index)}<small>GESAMTINDEX 0–100</small></div>
@@ -673,6 +687,12 @@ function renderDetail(){
       </div>`;}).join('')}
   </div>
 
+  <div class="card">
+    <h2 class="sect" style="margin-top:0">Warum steht der Kurs bei ${fmt1(c.index)}?</h2>
+    ${erklaerHTML(a)}
+    <p class="hinweis">Index = Σ(Score × Gewicht) ÷ Σ(aktive Gewichte). Keine versteckten Bewertungen — jede Zahl ist herleitbar.</p>
+  </div>
+
   <div class="card" id="spartenBox"></div>
 
   <div class="card">
@@ -692,7 +712,13 @@ function renderDetail(){
 
   <div class="card">
     <h2 class="sect" style="margin-top:0">Coaching-Impulse</h2>
+    <div class="impuls" style="border-color:var(--amber);background:var(--amber-hell)"><b>Analystenkommentar:</b> ${analyst(a)}</div>
     ${c.imp.map(t=>`<div class="impuls">${t}</div>`).join('')}
+  </div>
+
+  <div class="card">
+    <h2 class="sect" style="margin-top:0">Maßnahmen & Coaching-ROI</h2>
+    <div id="masBox"><p class="hinweis">Lade …</p></div>
   </div>
 
   <div class="card">
@@ -715,7 +741,7 @@ function renderDetail(){
   <p class="hinweis">Berechnung: Index = Σ(Score × Gewicht) / Σ(aktive Gewichte). Fehlende Dimensionen verschlechtern den Index nie — sie werden transparent neugewichtet. Rating & Vergleiche sind intern und erscheinen nicht im Präsentationsmodus.</p>`;
 
   setTimeout(()=>{document.getElementById('pfadFill').style.width=Math.min(100,c.quote*100)+'%';},60);
-  renderSparten(a); loadDeals(a); wiUpdate(); loadPuls(a,'pulsBox'); loadWettbewerb(a);
+  renderSparten(a); loadDeals(a); wiUpdate(); loadPuls(a,'pulsBox'); loadWettbewerb(a); loadMassnahmen(a); setTimeout(()=>checkCelebration(a),700);
 }
 
 function setPhase(vm,p){ ov(vm).phase=p; saveOV(); const a=ALL.find(x=>x.vm===vm); recompute(a); renderDetail(); }
@@ -866,6 +892,7 @@ function openPraes(vm){
       </div>
       ${praesSparten(a)}
       ${praesLiga(a)}
+      ${praesBadges(a)}
       <div class="card" id="pulsPraesBox" style="display:none"></div>
       <p class="hinweis" style="text-align:center">Diese Ansicht zeigt ausschließlich deine eigenen Daten. Keine Vergleiche, keine Rankings — dein Gegner ist die Stufenleiter.</p>
     </div>`;
@@ -1371,6 +1398,120 @@ function praesLiga(a){
   return '<div class="card"><h2 class="sect" style="margin-top:0">Deine Liga</h2>'
    +'<div class="kpi"><div class="lbl">'+lp.liga+'</div><div class="val" style="font-size:26px">Platz '+lp.pos+' von '+lp.of+'</div>'
    +'<div class="sub">'+(lp.pos===1?'Du führst deine Liga an — jetzt geht es um Verteidigung.':'Vor dir ist noch Platz. Die Leiter kennt nur eine Richtung.')+'</div></div></div>';
+}
+
+/* =====================================================================
+   Welle 6/7 · Celebration, Badges, Analyst, Erklärung, Maßnahmen, Saison
+===================================================================== */
+function confetti(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const c=document.createElement('canvas');c.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:99';
+  c.width=innerWidth;c.height=innerHeight;document.body.appendChild(c);
+  const x=c.getContext('2d'),P=[],cols=['#0E5A46','#B07A1E','#7FD1B5','#1A1816'];
+  for(let i=0;i<130;i++)P.push({x:Math.random()*c.width,y:-20-Math.random()*c.height*.4,v:2+Math.random()*3.2,w:4+Math.random()*5,r:Math.random()*Math.PI,vr:(Math.random()-.5)*.22,col:cols[i%4]});
+  let t=0;(function f(){x.clearRect(0,0,c.width,c.height);
+    P.forEach(p=>{p.y+=p.v;p.r+=p.vr;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.col;x.fillRect(-p.w/2,-p.w/2,p.w,p.w*.62);x.restore();});
+    if(++t<170)requestAnimationFrame(f);else c.remove();})();
+}
+function showCeleb(ev){
+  const d=document.createElement('div');d.className='celeb';
+  d.innerHTML='<div class="cbox"><h3>'+ev.t+'</h3><p>'+ev.s+'</p><p class="hinweis" style="margin-top:10px">Tippen zum Schließen</p></div>';
+  d.onclick=()=>d.remove();document.body.appendChild(d);
+  setTimeout(()=>d.remove(),5000);
+}
+function checkCelebration(a){
+  const key='agpx_seen',seen=JSON.parse(localStorage.getItem(key)||'{}');
+  const prev=seen[a.vm]||{};const best=Math.max(...a.m);const events=[];
+  if(prev.fixF!==undefined&&a.c.fixF>prev.fixF)events.push({t:'Stufenaufstieg! 🏆',s:'Neue Fixum-Stufe: '+fmt(a.c.fixF)+' € (vorher '+fmt(prev.fixF)+' €). Die Leiter kennt nur eine Richtung.'});
+  if(prev.best!==undefined&&best>prev.best)events.push({t:'Rekord gebrochen! 📈',s:'Bester Monat aller Zeiten: '+fmt(best)+' €.'});
+  seen[a.vm]={fixF:a.c.fixF,best};localStorage.setItem(key,JSON.stringify(seen));
+  if(events.length){confetti();showCeleb(events[0]);}
+}
+function badges(a){
+  const c=a.c,b=[],d=spartenDNA(a),Z=CFG.zielpfadMonat*(c.f||1),m=a.m;
+  if(c.quote>=1)b.push(['🏆','38.100-Club']);
+  if(d&&!d.topFleck)b.push(['🎯','Allrounder']);
+  if(d&&d.t.bu>=150)b.push(['🧊','Eisbrecher BU']);
+  if(m.length>=4){const i=m.length;
+    if(m[i-1]>m[i-2]&&m[i-2]>m[i-3]&&m.slice(0,i-3).some(x=>x<Z*.3))b.push(['📈','Comeback']);}
+  if(c.vola==='sehr stabil'||c.vola==='stabil')b.push(['🪨','Konstanz']);
+  return b;
+}
+function analyst(a){
+  const c=a.c,d=spartenDNA(a),pool=[];
+  pool.push('Momentum '+c.mom+' — dein 3M-Schnitt liegt bei '+fmt(c.p3)+' €. '+(c.deltaPct>=5?'Der Trend arbeitet für dich. Nicht nachlassen, wenn es leicht wird.':'Ein Termin mehr pro Woche dreht solche Trends erfahrungsgemäß in 6 Wochen.'));
+  const best=Math.max(...a.m);
+  pool.push('Dein Rekordmonat: '+fmt(best)+' €. Rekorde sind keine Erinnerungen — sie sind Zielmarken.');
+  const ns=nextStufe(c.hochr);
+  if(ns)pool.push('Bis zur nächsten Stufe ('+fmt(ns.fixum)+' €) fehlen '+fmt(ns.schwelle-c.hochr)+' € Hochrechnung. Das ist kein Jahresprojekt — das ist ein guter Monat.');
+  if(d&&d.topFleck)pool.push('Stille Reserve: '+d.topFleck.lbl+'. Ein einziger Abschluss dort verändert dein Radar sichtbar — und dein Folge-Fixum unsichtbar mit.');
+  if(c.vola==='volatil'||c.vola==='sehr volatil')pool.push('Deine Spitzen sind stark, deine Täler teuer. Konstanz ist die günstigste Provisionssteigerung, die es gibt.');
+  if(c.quote>=1)pool.push('Höchststufe gesichert. Champions verteidigen nicht — sie bauen Vorsprung. Jeder Euro ab jetzt ist Puffer fürs nächste Jahr.');
+  if(c.scores.stab!==null&&c.scores.stab>=70&&c.scores.perf<60)pool.push('Deine Verlässlichkeit ist dein Fundament. Jetzt fehlt nur Volumen: mehr Termine, gleiche Qualität.');
+  let h=0;for(const ch of a.vm)h=(h*31+ch.charCodeAt(0))%997;
+  const wk=Math.ceil((((new Date())-new Date(new Date().getFullYear(),0,1))/86400000+1)/7);
+  return pool[(wk+h)%pool.length];
+}
+function erklaerHTML(a){
+  const c=a.c;
+  const rows=[
+   ['perf','Performance','Ø der letzten 3 Monatssummen ('+fmt(c.p3)+' €), bewertet auf einer Kurve: Zielpfad '+fmt(Math.round(CFG.zielpfadMonat*(c.f||1)))+' €/Monat = 70 Punkte, 8.000 € = 100.','Schnellster Hebel: Terminfrequenz erhöhen.'],
+   ['entw','Entwicklung','Aktueller 3M-Schnitt vs. vorherige 3 Monate ('+(c.deltaPct>=0?'+':'')+fmt(c.deltaPct)+' %) plus Trendlinie über die gesamte eigene Historie. Verglichen wird nur mit dir selbst.','Hebel: Wiederholbarkeit statt Einmal-Spitzen.'],
+   ['wirt','Wirtschaftlichkeit','Hochrechnung '+fmt(c.hochr)+' € ÷ Jahresziel 38.100 € = '+fmt(c.quote*100)+' % Pfad-Quote. Bei 100 % ist die Höchststufe rechnerisch gesichert.','Hebel: Jeder Euro AP zählt doppelt — heute als Provision, nächstes Jahr als Fixum.'],
+   ['stab','Stabilität','Schwankung der Monatswerte (CV '+(c.cv!==undefined?fmt1(c.cv*100)+' %':'—')+'); sehr schwache Monate kosten Zusatzpunkte.','Hebel: feste wöchentliche Einreichungsroutine.'],
+   ['potz','Potenzial','Ø deiner vier Quartals-Bewertungen (Lernfähigkeit, Eigeninitiative, Umsetzungsstärke, Teamwert) × 20.','Hebel: Feedback sichtbar in Handlung übersetzen.']
+  ];
+  return rows.map(([k,t,f,l])=>{const v=c.scores[k];
+    return '<details><summary><b>'+t+'</b> — '+(v===null?'inaktiv (neugewichtet)':fmt(v)+' Punkte')+'</summary><p style="font-size:13.5px;margin:6px 0">'+f+'</p><p class="hinweis" style="margin:0">'+l+'</p></details>';}).join('');
+}
+async function loadMassnahmen(a){
+  const el=document.getElementById('masBox'); if(!el)return;
+  try{
+    const {data:rows}=await sb.from('massnahme').select('*').eq('agp_id',a.agpId).order('faellig',{ascending:true});
+    const list=(rows||[]).map(r=>{
+      let roi='';
+      if(r.status==='abgeschlossen'&&r.start&&a.wb){
+        const idx=Math.round((new Date(r.start)-new Date(a.wb))/2629800000);
+        if(idx>0&&idx<a.m.length){
+          const before=avg(a.m.slice(Math.max(0,idx-3),idx)),after=avg(a.m.slice(idx));
+          roi=' · <b>Effekt: '+(after-before>=0?'+':'')+fmt(after-before)+' €/Monat</b>';
+        }
+      }
+      return '<div class="rate-row" style="align-items:flex-start;gap:10px"><div style="flex:1"><b style="font-family:var(--font-display)">'+(r.ziel||'—')+'</b><div class="hinweis" style="margin:2px 0 0">fällig '+(r.faellig||'offen')+roi+'</div></div>'
+       +(ROLLE==='ldo'
+         ?'<select onchange="updMas(\''+r.id+'\',this.value)">'+['geplant','gestartet','in_bearbeitung','abgeschlossen','pausiert','verworfen'].map(st=>'<option '+(r.status===st?'selected':'')+'>'+st+'</option>').join('')+'</select>'
+         :'<span class="chip neutral">'+r.status+'</span>')+'</div>';
+    }).join('');
+    el.innerHTML=(list||'<p class="hinweis">Noch keine Maßnahmen angelegt.</p>')
+     +(ROLLE==='ldo'?'<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><input id="masZiel" placeholder="Ziel / Maßnahme" style="flex:1;min-width:150px;padding:9px;border:1px solid var(--linie);border-radius:8px"><input id="masFaellig" type="date" style="padding:9px;border:1px solid var(--linie);border-radius:8px"><button class="btn-primary" style="width:auto;padding:9px 16px" onclick="addMas()">+ Anlegen</button></div><p class="hinweis" style="margin-top:6px">ROI wird automatisch berechnet: Ø 3 Monate vor Start vs. Ø ab Start — sichtbar sobald „abgeschlossen".</p>':'');
+  }catch(e){el.innerHTML='<p class="hinweis">Maßnahmen nicht ladbar: '+e.message+'</p>';}
+}
+async function addMas(){
+  const a=ALL.find(x=>x.vm===curVM);
+  const z=document.getElementById('masZiel').value.trim(); if(!z)return;
+  await sb.from('massnahme').insert({agp_id:a.agpId,ziel:z,start:new Date().toISOString().slice(0,10),faellig:document.getElementById('masFaellig').value||null});
+  loadMassnahmen(a);
+}
+async function updMas(id,st){
+  await sb.from('massnahme').update({status:st}).eq('id',id);
+  const a=ALL.find(x=>x.vm===curVM); loadMassnahmen(a);
+}
+window.addMas=addMas; window.updMas=updMas;
+function renderSaison(){
+  const el=document.getElementById('saison'); if(!el)return;
+  const sums=Array(12).fill(0),cnt=Array(12).fill(0);
+  ALL.forEach(a=>a.m.forEach((v,i)=>{const mi=MONL.indexOf(a.monate[i]); if(mi>=0){sums[mi]+=Math.max(0,v);cnt[mi]++;}}));
+  if(!cnt.some(x=>x)){el.innerHTML='<p class="hinweis">Noch keine Daten.</p>';return;}
+  const av=sums.map((x,i)=>cnt[i]?x/cnt[i]:0),mx=Math.max(...av,1);
+  el.innerHTML='<div style="display:flex;align-items:flex-end;gap:5px;height:112px">'
+   +av.map((v,i)=>'<div style="flex:1;text-align:center"><div style="height:'+Math.round(v/mx*88)+'px;background:'+(v?'var(--russ)':'var(--kalk-tief)')+';border-radius:4px 4px 0 0" title="'+MONL[i]+': Ø '+fmt(v)+' €"></div><div class="mono" style="font-size:9.5px;margin-top:3px">'+MONL[i]+'</div></div>').join('')
+   +'</div><p class="hinweis" style="margin-top:8px">Ø Monats-AP je Kalendermonat über alle AGP — deine Datenbasis für Kampagnen-Timing (Fundbüro-Kalender).</p>';
+}
+function praesBadges(a){
+  const b=badges(a);
+  return '<div class="card"><h2 class="sect" style="margin-top:0">Auszeichnungen & Analystenkommentar</h2>'
+   +(b.length?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+b.map(([e,l])=>'<span class="chip pos" style="font-size:13px;padding:6px 12px">'+e+' '+l+'</span>').join('')+'</div>':'<p class="hinweis">Deine erste Auszeichnung wartet — die nächste Stufe, der nächste Rekord, der erste BU-Abschluss.</p>')
+   +'<div class="impuls">'+analyst(a)+'</div></div>';
 }
 
 function praesSparten(a){
