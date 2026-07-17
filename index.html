@@ -167,6 +167,28 @@ h2.sect{font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:upper
 .imp-table td.mono,.imp-table th.mono{font-family:var(--font-mono);text-align:right}
 .status-ok{color:var(--signal);font-weight:700}
 .status-warn{color:var(--amber);font-weight:700}
+/* ---- Welle 3 ---- */
+.wi-row{display:flex;align-items:center;gap:12px;margin:10px 0}
+.wi-row label{flex:1;font-size:14px}
+.wi-row input[type=range]{flex:2;accent-color:var(--signal)}
+.wi-row input[type=number]{width:86px;padding:7px;border:1px solid var(--linie);border-radius:8px;font-family:var(--font-mono);text-align:right}
+.wi-val{font-family:var(--font-mono);font-weight:700;min-width:44px;text-align:right}
+.wi-result{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.wi-box{padding:12px;border-radius:8px;background:var(--kalk)}
+.wi-box.sim{background:var(--signal-hell)}
+.wi-box .l{font-family:var(--font-display);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--russ-70)}
+.wi-box .v{font-family:var(--font-mono);font-weight:700;font-size:19px;margin-top:3px}
+.wi-box .s{font-size:12.5px;color:var(--russ-70)}
+.wi-delta{margin-top:10px;text-align:center;font-size:15px}
+.wi-delta b{font-family:var(--font-mono);font-size:20px;color:var(--signal)}
+.prog-row{display:grid;grid-template-columns:110px 1fr 84px;gap:10px;align-items:center;margin-bottom:7px;font-size:13.5px}
+.prog-row .b{height:11px;background:var(--kalk-tief);border-radius:99px;overflow:hidden}
+.prog-row .b i{display:block;height:100%;border-radius:99px}
+.prog-row .v{font-family:var(--font-mono);font-size:12px;text-align:right}
+.alert{padding:11px 13px;border-left:3.5px solid var(--amber);background:var(--amber-hell);border-radius:0 8px 8px 0;font-size:14px;margin-bottom:8px;cursor:pointer}
+.alert.sev3{border-color:var(--alarm);background:var(--alarm-hell)}
+.alert.sev1{border-color:var(--russ-40);background:var(--kalk)}
+.alert b{font-family:var(--font-display)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -190,6 +212,8 @@ h2.sect{font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:upper
       <div class="card kpi"><div class="lbl">Stärkstes Momentum</div><div class="val" id="k-mom" style="font-size:19px">–</div><div class="sub" id="k-mom-sub"></div></div>
       <div class="card kpi"><div class="lbl">Warnungen</div><div class="val" id="k-warn">–</div><div class="sub">Pfad kritisch / Rückzahlung</div></div>
     </div>
+    <h2 class="sect">Frühwarnungen</h2>
+    <div class="card" id="alerts"></div>
     <h2 class="sect">Movers des Monats</h2>
     <div class="card" id="movers"></div>
     <h2 class="sect">Fixum-Pfad-Verteilung</h2>
@@ -508,6 +532,7 @@ function renderDash(){
      <div style="flex:${y};height:16px;background:var(--amber)" title="${y} auf dem Weg"></div>
      <div style="flex:${r};height:16px;background:var(--alarm);border-radius:0 99px 99px 0" title="${r} kritisch"></div>`;
   renderHeatmap();
+  renderAlerts();
 }
 
 /* ---------- Liste ---------- */
@@ -603,6 +628,27 @@ function renderDetail(){
   </div>
 
   <div class="card">
+    <h2 class="sect" style="margin-top:0">What-if-Simulator <span class="badge-dq" style="float:right">Restlaufzeit ${Math.max(0,12-c.n)} Monate</span></h2>
+    <div class="wi-row">
+      <label for="wiExtra">Zusätzliche Abschlüsse / Woche</label>
+      <input type="range" id="wiExtra" min="0" max="5" step="0.5" value="0" oninput="wiUpdate()">
+      <span class="wi-val" id="wiExtraVal">0</span>
+    </div>
+    <div class="wi-row">
+      <label for="wiTicket">Ø-Provision pro Abschluss</label>
+      <input type="number" id="wiTicket" value="350" min="50" step="10" oninput="this.dataset.touched=1;wiUpdate()"> <span style="font-size:13px">€</span>
+    </div>
+    <div class="wi-result">
+      <div class="wi-box"><div class="l">Aktueller Kurs</div><div class="v" id="wiBaseTotal">–</div><div class="s" id="wiBaseStufe"></div></div>
+      <div class="wi-box sim"><div class="l">Mit Extra-Einsatz</div><div class="v" id="wiSimTotal">–</div><div class="s" id="wiSimStufe"></div></div>
+    </div>
+    <div class="wi-delta" id="wiDelta"></div>
+
+    <h2 class="sect">Prognose-Band <span class="badge-dq" style="float:right">auf Basis 3M-Tempo</span></h2>
+    <div id="progBand"></div>
+  </div>
+
+  <div class="card">
     <h2 class="sect" style="margin-top:0">Bewertungsdimensionen <span class="badge-dq" style="float:right">effektive Gewichte bei ${c.active.length}/5 aktiv</span></h2>
     ${dims.map(([k,lbl,sub])=>{
       const v=c.scores[k], on=v!==null;
@@ -646,7 +692,7 @@ function renderDetail(){
   <p class="hinweis">Berechnung: Index = Σ(Score × Gewicht) / Σ(aktive Gewichte). Fehlende Dimensionen verschlechtern den Index nie — sie werden transparent neugewichtet. Rating & Vergleiche sind intern und erscheinen nicht im Präsentationsmodus.</p>`;
 
   setTimeout(()=>{document.getElementById('pfadFill').style.width=Math.min(100,c.quote*100)+'%';},60);
-  renderSparten(a); loadDeals(a);
+  renderSparten(a); loadDeals(a); wiUpdate();
 }
 
 function setPhase(vm,p){ ov(vm).phase=p; saveOV(); const a=ALL.find(x=>x.vm===vm); recompute(a); renderDetail(); }
@@ -1131,6 +1177,8 @@ async function loadDeals(a){
      +'<div class="kpi"><div class="lbl">Abschlüsse / Woche</div><div class="val" style="font-size:24px">'+perWeek.toLocaleString('de-DE',{maximumFractionDigits:1})+'</div><div class="sub">über '+Math.round(weeks)+' Wochen</div></div>'
      +'<div class="kpi"><div class="lbl">Storno-Proxy</div><div class="val" style="font-size:24px"><span class="chip '+sQcls+'" style="font-size:16px;padding:5px 12px">'+stornoQ.toLocaleString('de-DE',{maximumFractionDigits:1})+' %</span></div><div class="sub">Rückbuchungen ohne Periodenstart-Verrechnung</div></div>'
      +'</div>';
+    const t=document.getElementById('wiTicket');
+    if(t&&!t.dataset.touched&&pos.length){t.value=Math.max(50,Math.round(posSum/pos.length));wiUpdate();}
   }catch(e){box.innerHTML='<p class="hinweis">Einzelsätze konnten nicht geladen werden: '+e.message+'</p>';}
 }
 function renderHeatmap(){
@@ -1146,6 +1194,64 @@ function renderHeatmap(){
        return '<td class="mono" style="background:rgba(14,90,70,'+(kt.t[K.k]>=50?op:0)+');color:'+(op>.5?'#fff':'inherit')+'">'+(kt.t[K.k]>=50?fmt(kt.t[K.k]):'·')+'</td>';}).join('')+'</tr>').join('')
    +'</table></div><p class="hinweis">Zellwert = kumulierte AP je Kategorie · Farbe = Anteil an der eigenen Gesamt-AP · „·" = weißer Fleck. Klumpenrisiko: Die Top-3 erwirtschaften <b>'+fmt(top3)+' %</b> der Team-AP.</p>';
 }
+/* =====================================================================
+   Welle 3 · What-if, Prognose, Frühwarnsystem
+===================================================================== */
+function wiUpdate(){
+  const a=ALL.find(x=>x.vm===curVM); if(!a||!a.c)return;
+  const ex=document.getElementById('wiExtra'); if(!ex)return;
+  const extra=+ex.value, ticket=+(document.getElementById('wiTicket').value||350);
+  document.getElementById('wiExtraVal').textContent=extra.toLocaleString('de-DE');
+  const c=a.c, restM=Math.max(0,12-c.n);
+  const baseTotal=c.kum+c.p3*restM;
+  const zusatz=extra*ticket*4.33*restM;
+  const simTotal=baseTotal+zusatz;
+  const stB=lookupFixum(baseTotal), stS=lookupFixum(simTotal);
+  document.getElementById('wiBaseTotal').textContent=fmt(baseTotal)+' €';
+  document.getElementById('wiBaseStufe').textContent='→ Stufe '+fmt(stB)+' €'+(baseTotal>=CFG.jahresziel?' · MAX':'');
+  document.getElementById('wiSimTotal').textContent=fmt(simTotal)+' €';
+  document.getElementById('wiSimStufe').textContent='→ Stufe '+fmt(stS)+' €'+(simTotal>=CFG.jahresziel?' · MAX':'');
+  const jd=(stS-stB)*12;
+  document.getElementById('wiDelta').innerHTML= restM===0
+    ? '<span class="hinweis">Wertungsperiode fast abgeschlossen — Simulation greift ab der neuen Periode.</span>'
+    : jd>0 ? 'Fixum-Effekt im Folgejahr: <b>+'+fmt(jd)+' €</b>'
+    : extra>0 ? '<span class="hinweis">Noch keine neue Stufe — der nächste Sprung braucht '+fmt(nextStufe(simTotal)? nextStufe(simTotal).schwelle-simTotal:0)+' € mehr.</span>'
+    : '<span class="hinweis">Bewege den Regler und sieh, was dein Einsatz wert ist.</span>';
+  /* Prognose-Band */
+  const pb=document.getElementById('progBand');
+  if(pb){
+    const scen=[['Konservativ',.75,'var(--russ-40)'],['Erwartet',1,'var(--russ)'],['Ambitioniert',1.25,'var(--signal)']];
+    const maxT=Math.max(CFG.jahresziel*1.2, c.kum+c.p3*1.25*restM);
+    pb.innerHTML=scen.map(([lbl,f,col])=>{
+      const t=c.kum+c.p3*f*restM, st=lookupFixum(t);
+      return '<div class="prog-row"><span>'+lbl+'</span><div class="b"><i style="width:'+Math.min(100,t/maxT*100)+'%;background:'+col+'"></i></div><span class="v">'+fmt(t)+' € → '+fmt(st)+'</span></div>';
+    }).join('')+'<p class="hinweis" style="margin-top:6px">Ziellinie Höchststufe: '+fmt(CFG.jahresziel)+' €. Prognose = Kumuliert + 3M-Schnitt × Restmonate × Faktor.</p>';
+  }
+}
+window.wiUpdate=wiUpdate;
+
+function alertsFor(a){
+  const c=a.c, out=[], restM=Math.max(0,12-c.n);
+  const Z=CFG.zielpfadMonat*(c.f||1);
+  if(a.uv<0||a.rz>0) out.push({sev:3,t:'<b>'+a.name+':</b> Unterverdienst/Rückzahlung aktiv ('+fmt(a.uv)+' € / '+fmt(a.rz)+' €). Sofortgespräch mit Zeitfenster + Wochenzielen.'});
+  if(c.fixF<a.fixA-200) out.push({sev:3,t:'<b>'+a.name+':</b> Fixum-Absturz voraus — aktuell '+fmt(a.fixA)+' € → Hochrechnung '+fmt(c.fixF)+' € ('+fmt(c.fixF-a.fixA)+' €/Monat). Noch '+restM+' Monate Zeit zum Gegensteuern.'});
+  else if(c.quote<0.5&&c.n>=4) out.push({sev:2,t:'<b>'+a.name+':</b> Pfad bei '+fmt(c.quote*100)+' % — Höchststufe braucht Ø '+fmt(Math.max(0,CFG.jahresziel-c.kum)/Math.max(1,restM))+' €/Monat für die Restlaufzeit.'});
+  const m=a.m;
+  if(m.length>=2&&m[m.length-1]<Z*0.5&&m[m.length-2]<Z*0.5&&restM<=5&&c.quote<1)
+    out.push({sev:2,t:'<b>'+a.name+':</b> Zwei schwache Monate in Folge, nur noch '+restM+' Monate Restlaufzeit. Jetzt intervenieren, nicht am Periodenende.'});
+  if(c.deltaPct<=-20&&c.index>=55) out.push({sev:1,t:'<b>'+a.name+':</b> Starker AGP mit stark negativem Momentum ('+fmt(c.deltaPct)+' %). Frühzeitig Ursache klären — Urlaub, Pipeline oder Motivation?'});
+  return out.map(x=>({...x,vm:a.vm}));
+}
+function renderAlerts(){
+  const el=document.getElementById('alerts'); if(!el)return;
+  const all=ALL.flatMap(alertsFor).sort((x,y)=>y.sev-x.sev);
+  el.innerHTML=all.length
+    ? all.map(x=>'<div class="alert sev'+x.sev+'" onclick="openDetail(\''+x.vm+'\')">'+x.t+'</div>').join('')
+    : '<p class="hinweis">Keine Frühwarnungen — alle Pfade im grünen Bereich.</p>';
+  const kw=document.getElementById('k-warn');
+  if(kw) kw.textContent=new Set(all.filter(x=>x.sev>=2).map(x=>x.vm)).size;
+}
+
 function praesSparten(a){
   const d=spartenDNA(a); if(!d) return '';
   return '<div class="card"><h2 class="sect" style="margin-top:0">Deine Sparten-DNA</h2>'+radarSVG(d)
