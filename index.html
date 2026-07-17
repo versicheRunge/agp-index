@@ -238,6 +238,8 @@ details[open]{background:#fff}
     <div class="card" id="alerts"></div>
     <h2 class="sect">Movers des Monats</h2>
     <div class="card" id="movers"></div>
+    <h2 class="sect">Sonderwettbewerbe</h2>
+    <div class="card" id="swBox"></div>
     <h2 class="sect">Fixum-Pfad-Verteilung</h2>
     <div class="card">
       <div class="pbar" style="display:flex;gap:2px;background:none;height:auto" id="ampelBar"></div>
@@ -309,6 +311,7 @@ details[open]{background:#fff}
       <p style="font-size:14.5px;margin-bottom:10px">Drei Dateien treiben das System: das <b>Wertungsblatt</b> (monatlich — Provisionen, Fixum, Einzelsätze), die <b>Tagesstatistik</b> (täglich — dein Puls) und der <b>Wettbewerb</b> (monatlich — Rang). Zum Kennenlernen kannst du den Startbestand vom 30.06.2026 einspielen:</p>
       <button class="btn-primary" onclick="seedDB()">Startbestand (Juni 2026) einspielen</button>
     </div>
+    <div class="card" id="swAdmin"></div>
   </section>
 
   <!-- ============ PRÄSENTATION ============ -->
@@ -536,6 +539,7 @@ function show(v){
   if(v==='liste') renderListe();
   if(v==='portfolio') renderMatrix();
   if(v==='vergleich') renderVglPick();
+  if(v==='import') renderSWAdmin();
 }
 document.querySelectorAll('nav.bottom button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 
@@ -592,6 +596,7 @@ function renderDash(){
   renderLigen();
   renderSaison();
   renderSchritte(alerts);
+  renderSW();
 }
 function renderSchritte(alerts){
   const el=document.getElementById('schritte'); if(!el)return;
@@ -944,10 +949,11 @@ function openPraes(vm){
       ${praesLiga(a)}
       ${praesBenchmark(a)}
       ${praesBadges(a)}
+      <div class="card" id="swPraes" style="display:none"></div>
       <div class="card" id="pulsPraesBox" style="display:none"></div>
       <p class="hinweis" style="text-align:center">Diese Ansicht zeigt ausschließlich deine eigenen Daten. Keine Vergleiche, keine Rankings — dein Gegner ist die Stufenleiter.</p>
     </div>`;
-  curVM=vm; show('praes'); setTimeout(()=>{startReplay();},350); loadPuls(a,'pulsPraesBox',true);
+  curVM=vm; show('praes'); setTimeout(()=>{startReplay();},350); loadPuls(a,'pulsPraesBox',true); loadSWPraes(a);
 }
 window.openPraes=openPraes;
 
@@ -1443,6 +1449,87 @@ function renderLigen(){
     +'</div>').join('')
    +'<p class="hinweis">Liga = Hochrechnungs-Niveau. In der AGP-Ansicht erscheint nur die eigene Liga-Position — nie fremde Zahlen.</p>';
 }
+/* =====================================================================
+   Sonderwettbewerbe · zeitlich begrenzt, an-/abschaltbar
+===================================================================== */
+async function fetchSW(alle){
+  try{
+    let q=sb.from('sonderwettbewerb').select('*').order('beginn',{ascending:false});
+    if(!alle)q=q.eq('aktiv',true);
+    const {data}=await q; return data||[];
+  }catch(_){return [];}
+}
+function swMatch(sparte,filter){
+  if(!filter)return true;
+  const sp=String(sparte||'').toLowerCase();
+  return filter.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean).some(t=>sp.includes(t));
+}
+async function swStandings(w){
+  const {data:es}=await sb.from('einzelsatz').select('agp_id,sparte,betrag,buchung').gte('buchung',w.beginn).lte('buchung',w.ende).limit(20000);
+  const agg={};
+  (es||[]).forEach(x=>{
+    if(+x.betrag<=0||!swMatch(x.sparte,w.sparte_filter))return;
+    agg[x.agp_id]=(agg[x.agp_id]||0)+(w.metrik==='stueck'?1:+x.betrag);
+  });
+  return ALL.map(a=>({a,v:Math.round((agg[a.agpId]||0)*100)/100})).sort((x,y)=>y.v-x.v);
+}
+async function renderSW(){
+  const el=document.getElementById('swBox'); if(!el)return;
+  const ws=await fetchSW();
+  if(!ws.length){el.innerHTML='<p class="hinweis">Kein Sonderwettbewerb aktiv. Anlegen und schalten unter Import → Sonderwettbewerbe.</p>';return;}
+  let html='';
+  for(const w of ws){
+    const st=(await swStandings(w)).filter(r=>r.v>0);
+    const unit=w.metrik==='stueck'?' Stück':' €';
+    html+='<div class="liga-grp"><h4>'+w.name+' · '+w.beginn+' – '+w.ende+(w.sparte_filter?' · '+w.sparte_filter:'')+'</h4>'
+     +(st.length?st.slice(0,5).map((r,i)=>'<div class="liga-row" onclick="openDetail(\''+r.a.vm+'\')"><span>'+(i+1)+'. '+r.a.name+'</span><span class="mono">'+(w.metrik==='stueck'?r.v:fmt(r.v))+unit+'</span></div>').join('')
+       :'<p class="hinweis">Noch keine Buchungen im Zeitraum — nach dem nächsten Wertungsblatt-Import füllt sich das Feld.</p>')
+     +'</div>';
+  }
+  el.innerHTML=html;
+}
+async function renderSWAdmin(){
+  const el=document.getElementById('swAdmin'); if(!el)return;
+  if(ROLLE!=='ldo'){el.style.display='none';return;}
+  const ws=await fetchSW(true);
+  el.innerHTML='<h2 class="sect" style="margin-top:0">Sonderwettbewerbe</h2>'
+   +(ws.length?ws.map(w=>'<div class="rate-row"><div><b style="font-family:var(--font-display)">'+w.name+'</b><div class="hinweis">'+w.beginn+' – '+w.ende+(w.sparte_filter?' · Filter: '+w.sparte_filter:' · alle Sparten')+' · '+(w.metrik==='stueck'?'Stückzahl':'AP in €')+'</div></div>'
+     +'<label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" '+(w.aktiv?'checked':'')+' onchange="swToggle(\''+w.id+'\',this.checked)"> aktiv</label></div>').join(''):'<p class="hinweis">Noch keiner angelegt.</p>')
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">'
+   +'<input id="swName" placeholder="Name (z.B. Riester-Endspurt)" style="grid-column:1/-1;padding:9px;border:1px solid var(--linie);border-radius:8px">'
+   +'<input id="swVon" type="date" style="padding:9px;border:1px solid var(--linie);border-radius:8px">'
+   +'<input id="swBis" type="date" style="padding:9px;border:1px solid var(--linie);border-radius:8px">'
+   +'<input id="swFilter" placeholder="Sparten-Filter: riester,rente" style="padding:9px;border:1px solid var(--linie);border-radius:8px">'
+   +'<select id="swMetrik" style="padding:9px;border:1px solid var(--linie);border-radius:8px"><option value="ap">AP in €</option><option value="stueck">Stückzahl</option></select>'
+   +'<button class="btn-primary" style="grid-column:1/-1" onclick="swAdd()">+ Sonderwettbewerb anlegen</button></div>'
+   +'<p class="hinweis" style="margin-top:8px">Filter matcht die Sparten-Bezeichnung der Einzelsätze (Komma-getrennt, Teilbegriffe reichen — „riester" trifft „Riester-Rente"). Leer = alle Sparten. Abgeschaltete Wettbewerbe verschwinden sofort aus allen Ansichten, Daten bleiben erhalten.</p>';
+}
+async function swAdd(){
+  const name=document.getElementById('swName').value.trim();
+  const von=document.getElementById('swVon').value, bis=document.getElementById('swBis').value;
+  if(!name||!von||!bis){alert('Name, Von und Bis sind Pflicht.');return;}
+  const {error}=await sb.from('sonderwettbewerb').insert({name,beginn:von,ende:bis,sparte_filter:document.getElementById('swFilter').value.trim()||null,metrik:document.getElementById('swMetrik').value});
+  if(error){alert('Fehler: '+error.message+' — SQL-Snippet für Tabelle sonderwettbewerb schon eingespielt?');return;}
+  renderSWAdmin(); renderSW();
+}
+async function swToggle(id,ak){ await sb.from('sonderwettbewerb').update({aktiv:ak}).eq('id',id); renderSW(); }
+window.swAdd=swAdd; window.swToggle=swToggle;
+async function loadSWPraes(a){
+  const el=document.getElementById('swPraes'); if(!el)return;
+  const ws=await fetchSW(); if(!ws.length)return;
+  let html='';
+  for(const w of ws){
+    const st=(await swStandings(w)).filter(r=>r.v>0);
+    const me=st.findIndex(r=>r.a.vm===a.vm);
+    const unit=w.metrik==='stueck'?' Stück':' €';
+    const val=me>=0?(w.metrik==='stueck'?st[me].v:fmt(st[me].v))+unit:'0'+unit;
+    html+='<div class="kpi" style="margin-bottom:10px"><div class="lbl">'+w.name+' · läuft bis '+w.ende+'</div>'
+     +'<div class="val" style="font-size:22px">'+(st.length>=2&&me>=0?'Platz '+(me+1)+' von '+st.length:'Dein Stand: '+val)+'</div>'
+     +'<div class="sub">'+(me>=0&&st.length>=2?'Dein Stand: '+val+(me>0?' · Abstand nach oben: '+(w.metrik==='stueck'?st[me-1].v-st[me].v:fmt(st[me-1].v-st[me].v))+unit:' · Du führst!'):'Jede Buchung im Zeitraum zählt.')+'</div></div>';
+  }
+  if(html){el.style.display='block';el.innerHTML='<h2 class="sect" style="margin-top:0">Sonderwettbewerbe</h2>'+html;}
+}
+
 function praesBenchmark(a){
   if(ALL.length<5) return ''; /* Kleine Vergleichsgruppen: Vergleich unterdrücken */
   const vals=ALL.map(x=>x.c.p3).sort((x,y)=>x-y);
