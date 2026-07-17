@@ -167,6 +167,16 @@ h2.sect{font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:upper
 .imp-table td.mono,.imp-table th.mono{font-family:var(--font-mono);text-align:right}
 .status-ok{color:var(--signal);font-weight:700}
 .status-warn{color:var(--amber);font-weight:700}
+/* ---- Welle 4/5 ---- */
+.gh{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,11px);gap:3px;justify-content:start;overflow-x:auto;padding-bottom:4px}
+.gh i{width:11px;height:11px;border-radius:2.5px;background:var(--kalk-tief)}
+.gh i.l1{background:#BFD9CE}.gh i.l2{background:#6FAE97}.gh i.l3{background:var(--signal)}
+.puls-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.puls-delta{font-family:var(--font-mono);font-weight:700;font-size:20px;color:var(--signal)}
+.liga-grp{margin-bottom:12px}
+.liga-grp h4{font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--russ-70);margin-bottom:6px}
+.liga-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--linie);font-size:14px;cursor:pointer}
+.liga-row:last-child{border-bottom:none}
 /* ---- Welle 3 ---- */
 .wi-row{display:flex;align-items:center;gap:12px;margin:10px 0}
 .wi-row label{flex:1;font-size:14px}
@@ -223,6 +233,8 @@ h2.sect{font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:upper
     </div>
     <h2 class="sect">Team-Sparten-Heatmap</h2>
     <div class="card" id="heatmap"><p class="hinweis">Sparten-Daten erscheinen nach dem nächsten Wertungsblatt-Import.</p></div>
+    <h2 class="sect">Ligen</h2>
+    <div class="card" id="ligen"></div>
   </section>
 
   <!-- ============ KURSE / LISTE ============ -->
@@ -533,6 +545,7 @@ function renderDash(){
      <div style="flex:${r};height:16px;background:var(--alarm);border-radius:0 99px 99px 0" title="${r} kritisch"></div>`;
   renderHeatmap();
   renderAlerts();
+  renderLigen();
 }
 
 /* ---------- Liste ---------- */
@@ -668,6 +681,16 @@ function renderDetail(){
   </div>
 
   <div class="card">
+    <h2 class="sect" style="margin-top:0">Tages-Puls <span class="badge-dq" style="float:right">aus täglicher Tagesstatistik</span></h2>
+    <div id="pulsBox"><p class="hinweis">Lade …</p></div>
+  </div>
+
+  <div class="card">
+    <h2 class="sect" style="margin-top:0">Wettbewerb <span class="badge-dq" style="float:right">bundesweit</span></h2>
+    <div id="wbBox"><p class="hinweis">Lade …</p></div>
+  </div>
+
+  <div class="card">
     <h2 class="sect" style="margin-top:0">Coaching-Impulse</h2>
     ${c.imp.map(t=>`<div class="impuls">${t}</div>`).join('')}
   </div>
@@ -692,7 +715,7 @@ function renderDetail(){
   <p class="hinweis">Berechnung: Index = Σ(Score × Gewicht) / Σ(aktive Gewichte). Fehlende Dimensionen verschlechtern den Index nie — sie werden transparent neugewichtet. Rating & Vergleiche sind intern und erscheinen nicht im Präsentationsmodus.</p>`;
 
   setTimeout(()=>{document.getElementById('pfadFill').style.width=Math.min(100,c.quote*100)+'%';},60);
-  renderSparten(a); loadDeals(a); wiUpdate();
+  renderSparten(a); loadDeals(a); wiUpdate(); loadPuls(a,'pulsBox'); loadWettbewerb(a);
 }
 
 function setPhase(vm,p){ ov(vm).phase=p; saveOV(); const a=ALL.find(x=>x.vm===vm); recompute(a); renderDetail(); }
@@ -842,9 +865,11 @@ function openPraes(vm){
         ${dimsSorted.slice(0,3).map(([k],i)=>`<div class="staerke"><span class="n">0${i+1}</span><span>${staerken[k]}</span></div>`).join('')}
       </div>
       ${praesSparten(a)}
+      ${praesLiga(a)}
+      <div class="card" id="pulsPraesBox" style="display:none"></div>
       <p class="hinweis" style="text-align:center">Diese Ansicht zeigt ausschließlich deine eigenen Daten. Keine Vergleiche, keine Rankings — dein Gegner ist die Stufenleiter.</p>
     </div>`;
-  curVM=vm; show('praes'); setTimeout(()=>{startReplay();},350);
+  curVM=vm; show('praes'); setTimeout(()=>{startReplay();},350); loadPuls(a,'pulsPraesBox',true);
 }
 window.openPraes=openPraes;
 
@@ -1041,16 +1066,22 @@ async function importWE(file){
     const byVM={}; ALL.forEach(a=>byVM[norm(a.vm)]=a);
     let hits=0;
     const monat=new Date().toISOString().slice(0,7)+'-01';
+    /* Alle Zeilen einlesen, bundesweit nach Punkten sortieren -> eigener Rang + Abstand nach oben */
+    const rowsAll=[];
     for(let r=hIdx+1;r<A.length;r++){
       const row=A[r]; if(!row)continue;
-      const vm=norm(row[cVM]); const a=byVM[vm];
-      if(!a)continue;
+      rowsAll.push({vm:norm(row[cVM]),p:cPkt>=0?(+row[cPkt]||0):0,seit:cSeit>=0?row[cSeit]:null,rangCol:cRang>=0?+row[cRang]||null:null});
+    }
+    rowsAll.sort((x,y)=>y.p-x.p);
+    for(let i=0;i<rowsAll.length;i++){
+      const rw=rowsAll[i]; const a=byVM[rw.vm]; if(!a)continue;
       const {data:ag}=await sb.from('agp').select('id').eq('vm_nr',a.vm).single();
       if(!ag)continue;
-      if(cSeit>=0&&row[cSeit]instanceof Date)
-        await sb.from('agp').update({eintritt:row[cSeit].toISOString().slice(0,10)}).eq('id',ag.id);
-      await sb.from('wettbewerb_snapshot').upsert({agp_id:ag.id,monat,
-        punkte:cPkt>=0?+row[cPkt]||null:null, rang:cRang>=0?+row[cRang]||null:null},{onConflict:'agp_id,monat'});
+      if(rw.seit instanceof Date)
+        await sb.from('agp').update({eintritt:rw.seit.toISOString().slice(0,10)}).eq('id',ag.id);
+      const rang=rw.rangCol||i+1;
+      const abstand=i>0? rowsAll[i-1].p-rw.p : 0;
+      await sb.from('wettbewerb_snapshot').upsert({agp_id:ag.id,monat,punkte:rw.p,rang,naechster_abstand:abstand},{onConflict:'agp_id,monat'});
       hits++;
     }
     out.innerHTML='<div class="card status-ok">✓ Wettbewerb: '+hits+' eigene AGP gematcht (Eintritt + Rang-Snapshot '+monat.slice(0,7)+').</div>';
@@ -1083,7 +1114,20 @@ async function importTS(file){
       const js={}; H.forEach((h,i)=>{if(i>3&&row[i]!==null&&row[i]!==0)js[h]=row[i];});
       const {data:ag}=await sb.from('agp').select('id').eq('vm_nr',a.vm).single();
       if(!ag)continue;
+      const bt=Object.entries(js).reduce((x,[k,v])=>x+((/beitr/i.test(k)&&typeof v==='number')?v:0),0);
+      const st=Object.entries(js).reduce((x,[k,v])=>x+((!/beitr/i.test(k)&&typeof v==='number')?v:0),0);
+      const dat=dm?dm[3]+'-'+dm[2]+'-'+dm[1]:new Date().toISOString().slice(0,10);
+      let delta=null;
+      try{
+        const {data:prev}=await sb.from('tagespuls').select('beitrag_total,datum').eq('agp_id',ag.id).lt('datum',dat).order('datum',{ascending:false}).limit(1);
+        if(prev&&prev.length){
+          delta=bt-(+prev[0].beitrag_total||0);
+          if(delta<0&&String(prev[0].datum).slice(0,7)!==dat.slice(0,7)) delta=bt; /* Monatswechsel: Kumulation resettet */
+          if(delta<0) delta=0;
+        }
+      }catch(_){}
       await sb.from('monatswert').upsert({agp_id:ag.id,monat,quelle:'tagesstatistik',stueck:js},{onConflict:'agp_id,monat,quelle'});
+      try{ await sb.from('tagespuls').upsert({agp_id:ag.id,datum:dat,beitrag_total:bt,stueck_total:st,delta},{onConflict:'agp_id,datum'}); }catch(_){}
       hits++;
     }
     out.innerHTML='<div class="card status-ok">✓ Tagesstatistik: '+hits+' AGP für '+monat.slice(0,7)+' aktualisiert (Tages-Puls-Basis wächst).</div>';
@@ -1100,11 +1144,10 @@ const KATS=[
  {k:'risiko',lbl:'Risiko',src:['risiko']},
  {k:'unfall',lbl:'Unfall',src:['unfall','verl_unfall']},
  {k:'gewerbe',lbl:'Gewerbe',src:['gewerbe','verl_gewerbe']},
- {k:'kfz',lbl:'KFZ',src:['kfz']},
  {k:'sach',lbl:'Sach',src:['sach','verl_sach']},
  {k:'rshp',lbl:'RS/HP',src:['rs','hp','verl_rs','verl_hp']}
 ];
-const HIER=['bu','lebenav','risiko','unfall','gewerbe','kfz','sach','rshp']; // Wert-Priorität (BU > LV > Risiko > Unfall > Sach)
+const HIER=['bu','lebenav','risiko','unfall','gewerbe','sach','rshp']; // Wert-Priorität (BU > LV > Risiko > Unfall > Sach)
 
 function katTotals(a){
   if(!a.sp||!a.sp.some(x=>x)) return null;
@@ -1250,6 +1293,84 @@ function renderAlerts(){
     : '<p class="hinweis">Keine Frühwarnungen — alle Pfade im grünen Bereich.</p>';
   const kw=document.getElementById('k-warn');
   if(kw) kw.textContent=new Set(all.filter(x=>x.sev>=2).map(x=>x.vm)).size;
+}
+
+/* =====================================================================
+   Welle 4/5 · Tages-Puls, Serien, Ligen, Wettbewerb
+===================================================================== */
+async function loadPuls(a,elId,praes){
+  const el=document.getElementById(elId); if(!el)return;
+  try{
+    if(!a.agpId){el.innerHTML='<p class="hinweis">Keine DB-Verbindung.</p>';return;}
+    const {data:rows}=await sb.from('tagespuls').select('datum,delta').eq('agp_id',a.agpId).order('datum',{ascending:true}).limit(200);
+    if(!rows||rows.length<2){
+      if(praes){el.style.display='none';return;}
+      el.innerHTML='<p class="hinweis">Der Puls startet mit den täglichen Tagesstatistik-Uploads — ab dem zweiten Upload erscheinen hier Heatmap, Serie und Tages-Delta.</p>';
+      return;
+    }
+    if(praes)el.style.display='block';
+    const byDate={}; rows.forEach(r=>{if(r.delta!==null)byDate[r.datum]=+r.delta;});
+    const deltas=Object.values(byDate).filter(v=>v>0).sort((x,y)=>x-y);
+    const q=p=>deltas.length?deltas[Math.floor(deltas.length*p)]||deltas[deltas.length-1]:1;
+    /* Heatmap: letzte 112 Tage */
+    const cells=[]; const today=new Date();
+    const start=new Date(today); start.setDate(start.getDate()-111);
+    while(start.getDay()!==1) start.setDate(start.getDate()-1); /* Montag-Start */
+    for(let d=new Date(start); d<=today; d.setDate(d.getDate()+1)){
+      const iso=d.toISOString().slice(0,10); const v=byDate[iso];
+      const lvl=v===undefined||v<=0?0: v>=q(.8)?3: v>=q(.4)?2:1;
+      cells.push('<i class="l'+lvl+'" title="'+iso+(v>0?': +'+fmt(v)+' €':'')+'"></i>');
+    }
+    /* Wochen-Serie */
+    const wk=d=>{const t=new Date(d);const on=(t.getDay()+6)%7;t.setDate(t.getDate()-on+3);const f=new Date(t.getFullYear(),0,4);return t.getFullYear()+'-'+String(1+Math.round(((t-f)/86400000-3+((f.getDay()+6)%7))/7)).padStart(2,'0');};
+    const activeWk=new Set(Object.entries(byDate).filter(([d,v])=>v>0).map(([d])=>wk(d)));
+    let streak=0,cur=new Date();
+    while(activeWk.has(wk(cur.toISOString().slice(0,10)))){streak++;cur.setDate(cur.getDate()-7);}
+    const last=rows[rows.length-1];
+    el.innerHTML='<div class="puls-head"><span class="hinweis" style="margin:0">Letzter Upload: '+last.datum+'</span>'
+      +(last.delta>0?'<span class="puls-delta">+'+fmt(+last.delta)+' € '+(praes?'— dein Kurs hat sich bewegt':'')+'</span>':'<span class="hinweis" style="margin:0">heute noch keine Bewegung</span>')+'</div>'
+      +'<div class="gh">'+cells.join('')+'</div>'
+      +'<p class="hinweis" style="margin-top:8px">'+(streak>0?'<b>Serie: '+streak+' aktive Woche'+(streak>1?'n':'')+' in Folge.</b> ':'Neue Serie startet mit der nächsten Einreichung. ')
+      +'Hinweis: BU, Risiko, Gewerbe und AL-AV laufen nicht über die Tagesstatistik — der Puls misst Einreichungsrhythmus, nicht Gesamtleistung.</p>';
+  }catch(e){el.innerHTML='<p class="hinweis">Tages-Puls noch nicht verfügbar ('+e.message+') — SQL-Update für Tabelle tagespuls einspielen.</p>';}
+}
+async function loadWettbewerb(a){
+  const el=document.getElementById('wbBox'); if(!el)return;
+  try{
+    const {data:rows}=await sb.from('wettbewerb_snapshot').select('monat,punkte,rang,naechster_abstand').eq('agp_id',a.agpId).order('monat',{ascending:true}).limit(24);
+    if(!rows||!rows.length){el.innerHTML='<p class="hinweis">Noch keine Wettbewerbs-Daten — Wettbewerbsdatei einmal ins Import-Center ziehen. Mit jedem Monat wächst hier der Rang-Verlauf.</p>';return;}
+    const last=rows[rows.length-1], prev=rows.length>1?rows[rows.length-2]:null;
+    const plDelta=prev&&last.rang&&prev.rang? prev.rang-last.rang : null;
+    const rangSerie=rows.map(r=>r.rang).filter(Boolean);
+    const spark=rangSerie.length>1? sparkSVG(rangSerie.map(r=>-r),420,44):'';
+    el.innerHTML='<div class="grid2">'
+      +'<div class="kpi"><div class="lbl">Rang bundesweit</div><div class="val" style="font-size:24px">'+(last.rang?'#'+fmt(last.rang):'—')+'</div><div class="sub">'+(plDelta!==null?(plDelta>0?'▲ '+plDelta+' Plätze gutgemacht':plDelta<0?'▼ '+(-plDelta)+' Plätze abgegeben':'▶ gehalten'):'erster Datenpunkt')+'</div></div>'
+      +'<div class="kpi"><div class="lbl">Punkte</div><div class="val" style="font-size:24px">'+fmt(+last.punkte||0)+'</div><div class="sub">'+(last.naechster_abstand>0?'nur '+fmt(+last.naechster_abstand)+' Punkte bis zum nächsten Platz':'Spitzenposition der Gruppe')+'</div></div>'
+      +'</div>'+(spark?'<div style="margin-top:8px">'+spark+'<p class="hinweis">Rang-Verlauf (aufwärts = besser)</p></div>':'');
+  }catch(e){el.innerHTML='<p class="hinweis">Wettbewerbs-Daten nicht ladbar: '+e.message+'</p>';}
+}
+function ligaOf(a){const h=a.c.hochr;return h>=30000?'Champions (≥ 30k)':h>=15000?'Etablierte (15–30k)':'Aufsteiger (< 15k)';}
+function ligaPos(a){
+  const l=ligaOf(a); const peers=ALL.filter(x=>ligaOf(x)===l).sort((x,y)=>y.c.hochr-x.c.hochr);
+  return {liga:l,pos:peers.findIndex(x=>x.vm===a.vm)+1,of:peers.length};
+}
+function renderLigen(){
+  const el=document.getElementById('ligen'); if(!el)return;
+  const grp={};
+  ALL.forEach(a=>{const l=ligaOf(a);(grp[l]=grp[l]||[]).push(a);});
+  el.innerHTML=['Champions (≥ 30k)','Etablierte (15–30k)','Aufsteiger (< 15k)'].filter(l=>grp[l]).map(l=>
+    '<div class="liga-grp"><h4>'+l+' · '+grp[l].length+'</h4>'
+    +grp[l].sort((x,y)=>y.c.hochr-x.c.hochr).map((a,i)=>
+      '<div class="liga-row" onclick="openDetail(\''+a.vm+'\')"><span>'+(i+1)+'. '+a.name+'</span><span class="mono">'+fmt(a.c.hochr)+' €</span></div>').join('')
+    +'</div>').join('')
+   +'<p class="hinweis">Liga = Hochrechnungs-Niveau. In der AGP-Ansicht erscheint nur die eigene Liga-Position — nie fremde Zahlen.</p>';
+}
+function praesLiga(a){
+  const lp=ligaPos(a);
+  if(lp.of<2) return '';
+  return '<div class="card"><h2 class="sect" style="margin-top:0">Deine Liga</h2>'
+   +'<div class="kpi"><div class="lbl">'+lp.liga+'</div><div class="val" style="font-size:26px">Platz '+lp.pos+' von '+lp.of+'</div>'
+   +'<div class="sub">'+(lp.pos===1?'Du führst deine Liga an — jetzt geht es um Verteidigung.':'Vor dir ist noch Platz. Die Leiter kennt nur eine Richtung.')+'</div></div></div>';
 }
 
 function praesSparten(a){
