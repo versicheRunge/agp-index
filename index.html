@@ -312,6 +312,7 @@ details[open]{background:#fff}
       <button class="btn-primary" onclick="seedDB()">Startbestand (Juni 2026) einspielen</button>
     </div>
     <div class="card" id="swAdmin"></div>
+    <div class="card" id="userAdmin"></div>
   </section>
 
   <!-- ============ PRÄSENTATION ============ -->
@@ -323,8 +324,11 @@ details[open]{background:#fff}
     <div class="wordmark">AGP<span class="tick">▲</span>INDEX</div>
     <p>Melde dich mit deiner E-Mail an.<br>Du bekommst einen Login-Link — kein Passwort nötig.</p>
     <input type="email" id="loginEmail" placeholder="deine@mail.de" autocomplete="email">
-    <button class="btn-primary" id="btnLogin" onclick="sendLink()">Login-Link senden</button>
-    <p id="loginMsg" style="margin-top:12px;min-height:20px"></p>
+    <input type="password" id="loginPw" placeholder="Passwort" autocomplete="current-password" style="display:none">
+    <button class="btn-primary" id="btnLogin" onclick="doLogin()">Login-Link senden</button>
+    <p style="margin-top:10px"><a href="#" id="pwToggle" onclick="togglePw();return false" style="font-size:13px;text-decoration:underline;color:var(--russ-70)">Mit Passwort anmelden</a></p>
+    <p id="loginMsg" style="min-height:20px"></p>
+    <p class="hinweis">Internes Tool der LDO Ostholstein. Zugänge vergibt ausschließlich Thomas Runge.</p>
   </div>
 </div>
 
@@ -539,7 +543,7 @@ function show(v){
   if(v==='liste') renderListe();
   if(v==='portfolio') renderMatrix();
   if(v==='vergleich') renderVglPick();
-  if(v==='import') renderSWAdmin();
+  if(v==='import'){renderSWAdmin();renderUserAdmin();}
 }
 document.querySelectorAll('nav.bottom button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 
@@ -974,16 +978,30 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
 let ROLLE='agp', MYVM=null, booted=false;
 
 function showLogin(){ document.getElementById('loginOverlay').style.display='flex'; }
-async function sendLink(){
+let pwMode=false;
+function togglePw(){
+  pwMode=!pwMode;
+  document.getElementById('loginPw').style.display=pwMode?'block':'none';
+  document.getElementById('btnLogin').textContent=pwMode?'Anmelden':'Login-Link senden';
+  document.getElementById('pwToggle').textContent=pwMode?'Lieber Login-Link per Mail':'Mit Passwort anmelden';
+}
+async function doLogin(){
   const email=document.getElementById('loginEmail').value.trim();
   const msg=document.getElementById('loginMsg'), btn=document.getElementById('btnLogin');
   if(!email){msg.textContent='Bitte E-Mail eingeben.';return;}
   btn.disabled=true;
-  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});
-  msg.textContent=error?('Fehler: '+error.message):'Link verschickt — prüfe dein Postfach (auch Spam).';
+  if(pwMode){
+    const pw=document.getElementById('loginPw').value;
+    const {error}=await sb.auth.signInWithPassword({email,password:pw});
+    msg.textContent=error?'Anmeldung fehlgeschlagen — E-Mail oder Passwort falsch, oder kein Zugang vergeben.':'';
+  }else{
+    /* shouldCreateUser:false — unbekannte E-Mails bekommen KEIN Konto */
+    const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:false}});
+    msg.textContent=error?'Kein Zugang für diese E-Mail. Zugänge vergibt Thomas.':'Link verschickt — prüfe dein Postfach (auch Spam).';
+  }
   btn.disabled=false;
 }
-window.sendLink=sendLink;
+window.doLogin=doLogin; window.togglePw=togglePw;
 
 const MONL=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
 const isoAddM=(iso,i)=>{const d=new Date(iso+'T00:00:00Z');d.setUTCMonth(d.getUTCMonth()+i);return d.toISOString().slice(0,7)+'-01';};
@@ -1504,6 +1522,25 @@ async function renderSWAdmin(){
    +'<button class="btn-primary" style="grid-column:1/-1" onclick="swAdd()">+ Sonderwettbewerb anlegen</button></div>'
    +'<p class="hinweis" style="margin-top:8px">Filter matcht die Sparten-Bezeichnung der Einzelsätze (Komma-getrennt, Teilbegriffe reichen — „riester" trifft „Riester-Rente"). Leer = alle Sparten. Abgeschaltete Wettbewerbe verschwinden sofort aus allen Ansichten, Daten bleiben erhalten.</p>';
 }
+async function renderUserAdmin(){
+  const el=document.getElementById('userAdmin'); if(!el)return;
+  if(ROLLE!=='ldo'){el.style.display='none';return;}
+  const {data:profs,error}=await sb.from('profiles').select('id,name,rolle,vm_nr').order('name');
+  if(error){el.innerHTML='<p class="hinweis">Profile nicht ladbar: '+error.message+'</p>';return;}
+  const vmOpts=(sel)=>'<option value="">— kein AGP —</option>'+ALL.map(a=>'<option value="'+a.vm+'" '+(sel===a.vm?'selected':'')+'>'+a.name+'</option>').join('');
+  el.innerHTML='<h2 class="sect" style="margin-top:0">Nutzer & Rollen</h2>'
+   +(profs||[]).map(p=>'<div class="rate-row" style="gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:150px"><b style="font-family:var(--font-display);font-size:14px;word-break:break-all">'+(p.name||p.id.slice(0,8))+'</b></div>'
+     +'<select onchange="updProfil(\''+p.id+'\',\'rolle\',this.value)"><option '+(p.rolle==='ldo'?'selected':'')+' value="ldo">LDO (alles)</option><option '+(p.rolle==='fk'?'selected':'')+' value="fk">Führungskraft</option><option '+(p.rolle==='agp'?'selected':'')+' value="agp">AGP</option></select>'
+     +'<select onchange="updProfil(\''+p.id+'\',\'vm_nr\',this.value)">'+vmOpts(p.vm_nr)+'</select></div>').join('')
+   +'<p class="hinweis" style="margin-top:10px"><b>Neue Nutzer anlegen:</b> Supabase → Authentication → Users → „Create new user" (E-Mail + Passwort, Auto-Confirm an). Der Nutzer erscheint dann hier — Rolle und AGP-Zuordnung vergibst du in dieser Liste. Ohne Zuordnung sieht ein AGP-Login nichts. Selbst-Registrierung ist deaktiviert.</p>';
+}
+async function updProfil(id,field,val){
+  const upd={}; upd[field]=val||null;
+  const {error}=await sb.from('profiles').update(upd).eq('id',id);
+  if(error)alert('Fehler: '+error.message);
+}
+window.updProfil=updProfil;
+
 async function swAdd(){
   const name=document.getElementById('swName').value.trim();
   const von=document.getElementById('swVon').value, bis=document.getElementById('swBis').value;
