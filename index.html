@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>AGP Index · LDO Ostholstein</title>
+<link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -49,6 +50,14 @@ nav.bottom button.on{background:var(--kalk);color:var(--russ)}
 .kpi .lbl{font-family:var(--font-display);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--russ-40)}
 .kpi .val{font-family:var(--font-mono);font-size:30px;font-weight:700;line-height:1.15;margin-top:4px}
 .kpi .sub{font-size:13px;color:var(--russ-70);margin-top:2px}
+.kpi{position:relative;padding-top:14px;border-top:3px solid var(--linie)}
+.kpi-ico{position:absolute;top:14px;right:16px;font-size:16px;opacity:.7}
+.kpi-a{border-top-color:var(--russ)}
+.kpi-b{border-top-color:var(--signal)}
+.kpi-c{border-top-color:var(--amber)}
+.kpi-d{border-top-color:var(--alarm)}
+.hero-band{background:var(--russ);color:var(--kalk);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;font-size:15px;line-height:1.55}
+.hero-band b{font-family:var(--font-display);color:#fff}
 .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:11.5px;padding:3px 9px;border-radius:99px;border:1px solid var(--linie);background:var(--kalk)}
 .chip.pos{background:var(--signal-hell);border-color:var(--signal);color:var(--signal)}
 .chip.neg{background:var(--amber-hell);border-color:var(--amber);color:var(--amber)}
@@ -198,6 +207,9 @@ h2.sect{font-size:15px;font-weight:800;letter-spacing:.05em;text-transform:upper
 .drop:active,.drop:hover{border-color:var(--russ-40);background:var(--kalk)}
 .drop b{display:block;font-family:var(--font-display);font-size:15px;color:var(--russ);margin-bottom:2px}
 .drop .cta{display:inline-block;margin-top:10px;font-family:var(--font-display);font-weight:700;font-size:12.5px;letter-spacing:.02em;color:var(--russ);background:var(--kalk-tief);padding:7px 14px;border-radius:99px}
+.cta{display:inline-block;font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.02em;color:var(--russ);background:var(--kalk-tief);padding:9px 16px;border-radius:99px;border:1px solid var(--linie)}
+.cta:active{transform:scale(.97)}
+.depot .cta{background:rgba(239,237,230,.1);color:#EFEDE6;border-color:#3A342C}
 .drop input{display:none}
 .cap{display:block;font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--russ-40);margin:0 0 4px}
 .field{margin-bottom:10px}
@@ -277,12 +289,12 @@ details[open]{background:#fff}
   <section class="view on" id="v-dash">
     <h2 class="sect" style="margin-top:0">Führungsradar</h2>
     <div class="grid4">
-      <div class="card kpi"><div class="lbl">Ø Index</div><div class="val" id="k-avg">–</div><div class="sub" id="k-avg-sub"></div></div>
-      <div class="card kpi"><div class="lbl">Fixum gesichert</div><div class="val" id="k-max">–</div><div class="sub">von <span id="k-total"></span> AGP — Mindestpfad, kein Endziel</div></div>
-      <div class="card kpi"><div class="lbl">Wachstumszonen</div><div class="val" id="k-zonen" style="font-size:20px">–</div><div class="sub">ab 5.000 · ab 10.000 · ab 20.000</div></div>
-      <div class="card kpi"><div class="lbl">Warnsignale</div><div class="val" id="k-warn">–</div><div class="sub">Pfad kritisch / Rückzahlung</div></div>
+      <div class="card kpi kpi-a"><span class="kpi-ico">📈</span><div class="lbl">Ø Index</div><div class="val" id="k-avg">–</div><div class="sub" id="k-avg-sub"></div></div>
+      <div class="card kpi kpi-b"><span class="kpi-ico">🔒</span><div class="lbl">Fixum gesichert</div><div class="val" id="k-max">–</div><div class="sub">von <span id="k-total"></span> AGP — Mindestpfad, kein Endziel</div></div>
+      <div class="card kpi kpi-c"><span class="kpi-ico">🚀</span><div class="lbl">Wachstumszonen</div><div class="val" id="k-zonen" style="font-size:20px">–</div><div class="sub">ab 5.000 · ab 10.000 · ab 20.000</div></div>
+      <div class="card kpi kpi-d"><span class="kpi-ico">⚠️</span><div class="lbl">Warnsignale</div><div class="val" id="k-warn">–</div><div class="sub">Pfad kritisch / Rückzahlung</div></div>
     </div>
-    <div class="card" id="radarText"></div>
+    <div class="hero-band" id="radarText"></div>
     <h2 class="sect">Frühwarnungen</h2>
     <div class="card" id="alerts"></div>
     <h2 class="sect">Movers des Monats</h2>
@@ -291,8 +303,12 @@ details[open]{background:#fff}
     <div class="card" id="swBox"></div>
     <h2 class="sect">Fixum-Pfad-Verteilung</h2>
     <div class="card">
-      <div class="pbar" style="display:flex;gap:2px;background:none;height:auto" id="ampelBar"></div>
-      <div class="legende"><span>● <b style="color:var(--signal)">Grün</b> Höchststufe gesichert</span><span>● <b style="color:var(--amber)">Amber</b> auf dem Weg</span><span>● <b style="color:var(--alarm)">Rot</b> kritisch</span></div>
+      <div class="pbar" style="display:flex;gap:2px;background:none;height:20px" id="ampelBar"></div>
+      <div class="legende">
+        <span class="chip pos">Gesichert</span>
+        <span class="chip neg">Auf dem Weg</span>
+        <span class="chip alarm">Kritisch</span>
+      </div>
     </div>
     <h2 class="sect">Team-Sparten-Heatmap</h2>
     <div class="card" id="heatmap"><p class="hinweis">Sparten-Daten erscheinen nach dem nächsten Wertungsblatt-Import.</p></div>
@@ -372,6 +388,7 @@ details[open]{background:#fff}
 
     <div class="card" id="swAdmin"></div>
     <div class="card" id="userAdmin"></div>
+    <div class="card" id="auditBox"></div>
   </section>
 
   <!-- ============ PRÄSENTATION ============ -->
@@ -601,7 +618,7 @@ function show(v){
   if(v==='liste') renderListe();
   if(v==='portfolio') renderMatrix();
   if(v==='vergleich') renderVglPick();
-  if(v==='import'){renderSWAdmin();renderUserAdmin();}
+  if(v==='import'){renderSWAdmin();renderUserAdmin();renderAudit();}
 }
 document.querySelectorAll('nav.bottom button').forEach(b=>b.onclick=()=>show(b.dataset.v));
 
@@ -952,6 +969,10 @@ function renderMatrix(){
   const maxK=Math.max(...ALL.map(a=>a.c.kum));
   const svg=document.getElementById('matrixSvg');
   svg.innerHTML=`
+    <rect x="${pad-10}" y="${pad-10}" width="${W/2-pad+10}" height="${H/2-pad+10}" fill="var(--kalk)"/>
+    <rect x="${W/2}" y="${pad-10}" width="${W/2-pad+10}" height="${H/2-pad+10}" fill="var(--signal-hell)" opacity=".55"/>
+    <rect x="${pad-10}" y="${H/2}" width="${W/2-pad+10}" height="${H/2-pad+10}" fill="var(--kalk)"/>
+    <rect x="${W/2}" y="${H/2}" width="${W/2-pad+10}" height="${H/2-pad+10}" fill="var(--kalk-tief)" opacity=".7"/>
     <line x1="${W/2}" y1="${pad-10}" x2="${W/2}" y2="${H-pad+10}" stroke="var(--linie)"/>
     <line x1="${pad-10}" y1="${H/2}" x2="${W-pad+10}" y2="${H/2}" stroke="var(--linie)"/>
     <text x="${W-pad}" y="${pad-24}" font-family="Bricolage Grotesque" font-weight="700" font-size="13" fill="#8B867C" text-anchor="end">STARS</text>
@@ -962,7 +983,7 @@ function renderMatrix(){
       const r=7+Math.sqrt(a.c.kum/maxK)*16;
       const col=a.c.flagAlarm?'var(--alarm)':a.c.quote>=1?'var(--signal)':'var(--amber)';
       return `<g style="cursor:pointer" onclick="openDetail('${a.vm}')" tabindex="0" role="button" aria-label="${a.name}, Index ${fmt1(a.c.index)}">
-        <circle cx="${xs(a)}" cy="${ys(a)}" r="${r}" fill="${col}" fill-opacity=".78"/>
+        <circle cx="${xs(a)}" cy="${ys(a)}" r="${r}" fill="${col}" fill-opacity=".85" stroke="#fff" stroke-width="1.5"/>
         <text x="${xs(a)}" y="${ys(a)-r-4}" font-family="Space Mono" font-size="10.5" fill="#4A4640" text-anchor="middle">${a.name.split(' ').slice(-1)[0]}</text></g>`;
     }).join('')}`;
 }
@@ -1014,6 +1035,7 @@ function openPraes(vm){
         <p class="nm">Dein Kurs</p>
         <div class="kurs"><span id="heroKum">0</span><small>€ kumuliert</small></div>
         <div class="delta ${up?'up':'down'}">${up?'▲ +':'▼ '}${fmt(c.deltaPct)} % ggü. Vorperiode</div>
+        <div id="pushRow" style="margin-top:16px"></div>
       </div>
       <div class="kurschart">
         <div class="kc-top"><span class="kc-monat" id="kcMonat">DEIN WERTUNGSZEITRAUM</span>
@@ -1043,9 +1065,46 @@ function openPraes(vm){
       <p class="hinweis" style="text-align:center">Diese Ansicht zeigt ausschließlich deine eigenen Daten. Keine Vergleiche, keine Rankings — dein Gegner ist die Stufenleiter.</p>
     </div>`;
   curVM=vm; show('praes');
-  setTimeout(()=>{startReplay(); countUp(document.getElementById('heroKum'),c.kum,0,1100);},350);
-  loadPuls(a,'pulsPraesBox',true); loadSWPraes(a);
+  setTimeout(()=>{startReplay(); countUp(document.getElementById('heroKum'),c.kum,0,1100); checkCelebration(a);},650);
+  loadPuls(a,'pulsPraesBox',true); loadSWPraes(a); renderPushRow(a);
 }
+const VAPID_PUBLIC='BAMtaIn5Da_a9CDQKiZ2jOT8doyZTZqHKs7NLZ9hgEd7lNzNka5ZUScnMaVC8rACkyVeNPux6smPYwO7F-_13XE';
+function b64ToUint8(b64){
+  const pad='='.repeat((4-b64.length%4)%4), s=(b64+pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(s); const out=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);
+  return out;
+}
+async function renderPushRow(a){
+  const el=document.getElementById('pushRow'); if(!el)return;
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)){el.innerHTML='';return;}
+  try{
+    const reg=await navigator.serviceWorker.getRegistration();
+    const sub=reg?await reg.pushManager.getSubscription():null;
+    if(sub||Notification.permission==='granted'){
+      el.innerHTML='<span class="chip pos">🔔 Kursalarm aktiv</span>';
+    }else if(Notification.permission==='denied'){
+      el.innerHTML='<span class="chip neutral" style="opacity:.7">Benachrichtigungen blockiert</span>';
+    }else{
+      el.innerHTML='<button class="cta" style="cursor:pointer" onclick="enablePush(\''+a.vm+'\')">🔔 Kursalarm aktivieren</button>';
+    }
+  }catch(_){el.innerHTML='';}
+}
+async function enablePush(vm){
+  const el=document.getElementById('pushRow');
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){el.innerHTML='<span class="chip neutral">Nicht erlaubt — jederzeit in den Browser-Einstellungen nachholbar</span>';return;}
+    const reg=await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToUint8(VAPID_PUBLIC)});
+    const j=sub.toJSON();
+    const a=ALL.find(x=>x.vm===vm);
+    const {error}=await sb.from('push_subscriptions').insert({agp_id:a.agpId,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth});
+    el.innerHTML=error?'<span class="chip neutral">Fehler beim Speichern: '+error.message+'</span>':'<span class="chip pos">🔔 Kursalarm aktiv</span>';
+  }catch(e){el.innerHTML='<span class="chip neutral">Push nicht verfügbar: '+e.message+'</span>';}
+}
+window.enablePush=enablePush;
 window.openPraes=openPraes;
 
 /* ---------- Export ---------- */
@@ -1205,8 +1264,10 @@ async function importWB(file){
 }
 async function commitWB(){
   const out=document.getElementById('impOut');
-  let neu=0,akt=0;
+  let neu=0,pushCount=0;
   for(const p of pendingWB){
+    const {data:before}=await sb.from('agp').select('fixum_folge').eq('vm_nr',p.vm).maybeSingle();
+    const altFix=before?+before.fixum_folge:0;
     const {data:row,error}=await sb.from('agp').upsert({vm_nr:p.vm,name:p.name,wertungsbeginn:p.wbISO,
       fixum_aktuell:p.fixA,fixum_folge:p.fixF,unterverdienst:p.uv,rueckzahlung:p.rz,sonderverrechnung:p.svTotal},
       {onConflict:'vm_nr'}).select().single();
@@ -1219,12 +1280,33 @@ async function commitWB(){
       for(let i=0;i<p.es.length;i+=500)
         await sb.from('einzelsatz').insert(p.es.slice(i,i+500).map(x=>({...x,agp_id:row.id})));
     }
+    if(before&&p.fixF>altFix){
+      const ok=await sendPush(p.vm,'📈 Kursalarm — neue Stufe erreicht',
+        'Deine Hochrechnung hat '+fmt(p.fixF)+' € Fixum-Stufe geknackt (vorher '+fmt(altFix)+' €).');
+      if(ok)pushCount++;
+    }
     neu++;
   }
-  out.innerHTML='<div class="card status-ok">✓ Wertungsblatt importiert: '+neu+' AGP aktualisiert (Monate + Einzelsätze + Fixum).</div>';
+  out.innerHTML='<div class="card status-ok">✓ Wertungsblatt importiert: '+neu+' AGP aktualisiert (Monate + Einzelsätze + Fixum).'
+    +(pushCount?' · '+pushCount+' Kursalarm-Push'+(pushCount===1?'':'s')+' verschickt.':'')+'</div>';
   await loadData(); pendingWB=null;
 }
 window.importWB=importWB; window.commitWB=commitWB;
+
+/* ---------- Push-Benachrichtigungen ---------- */
+async function sendPush(vm_nr,title,body){
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(SB_URL+'/functions/v1/send-push',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token,'apikey':SB_KEY},
+      body:JSON.stringify({vm_nr,title,body})
+    });
+    const j=await res.json();
+    return res.ok&&j.sent>0;
+  }catch(_){return false;}
+}
+
 
 /* ---------- Import: Wettbewerb (Eintritt + Rang) ---------- */
 async function importWE(file){
@@ -1599,6 +1681,23 @@ async function renderSWAdmin(){
    +'<button class="btn-primary" onclick="swAdd()">+ Sonderwettbewerb anlegen</button>'
    +'<p class="hinweis" style="margin-top:10px">Filter matcht die Sparten-Bezeichnung der Einzelsätze (Komma-getrennt, Teilbegriffe reichen — „riester" trifft „Riester-Rente"). Leer = alle Sparten. Abgeschaltete Wettbewerbe verschwinden sofort aus allen Ansichten, Daten bleiben erhalten.</p>';
 }
+async function renderAudit(){
+  const el=document.getElementById('auditBox'); if(!el)return;
+  if(ROLLE!=='ldo'){el.style.display='none';return;}
+  try{
+    const {data,error}=await sb.from('audit_log').select('*').order('zeitpunkt',{ascending:false}).limit(20);
+    if(error){el.innerHTML='<div class="admin-sec"><h3><span class="ico">🛡️</span> Audit-Log</h3></div><p class="hinweis">Noch nicht eingerichtet — SQL-Skript „audit-log.sql" einspielen.</p>';return;}
+    const TBL={profiles:'Rolle/Zuordnung',bewertung:'Bewertung',massnahme:'Maßnahme',config:'Konfiguration'};
+    el.innerHTML='<div class="admin-sec"><h3><span class="ico">🛡️</span> Audit-Log <span class="badge-dq" style="margin-left:auto">letzte 20</span></h3></div>'
+     +(data&&data.length?data.map(r=>{
+        const d=new Date(r.zeitpunkt);
+        return '<div class="rate-row" style="font-size:13px"><div><b style="font-family:var(--font-display)">'+(TBL[r.tabelle]||r.tabelle)+'</b> · '+r.aktion
+          +'<div class="hinweis">'+d.toLocaleDateString('de-DE')+' '+d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+'</div></div></div>';
+      }).join(''):'<p class="hinweis">Noch keine protokollierten Änderungen.</p>');
+  }catch(e){el.innerHTML='<p class="hinweis">Audit-Log nicht ladbar.</p>';}
+}
+window.renderAudit=renderAudit;
+
 async function renderUserAdmin(){
   const el=document.getElementById('userAdmin'); if(!el)return;
   if(ROLLE!=='ldo'){el.style.display='none';return;}
