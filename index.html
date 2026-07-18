@@ -385,8 +385,7 @@ details[open]{background:#fff}
     <input type="email" id="loginEmail" placeholder="deine@mail.de" autocomplete="email">
     <input type="password" id="loginPw" placeholder="Passwort" autocomplete="current-password">
     <button class="btn-primary" id="btnLogin" onclick="doLogin()">Anmelden</button>
-    <p style="margin-top:10px"><a href="#" id="pwToggle" onclick="togglePw();return false" style="font-size:13px;text-decoration:underline;color:var(--russ-70)">Stattdessen Login-Link per Mail (limitiert)</a></p>
-    <p id="loginMsg" style="min-height:20px"></p>
+    <p id="loginMsg" style="min-height:20px;margin-top:10px"></p>
     <p class="hinweis">Internes Tool der LDO Ostholstein. Zugänge vergibt ausschließlich Thomas Runge.</p>
   </div>
 </div>
@@ -1066,30 +1065,17 @@ const sb = window.supabase.createClient(SB_URL, SB_KEY);
 let ROLLE='agp', MYVM=null, booted=false;
 
 function showLogin(){ document.getElementById('loginOverlay').style.display='flex'; }
-let pwMode=true; // Standard: Passwort — Supabase-Mailversand ist auf 2-3 Mails/Std. limitiert
-function togglePw(){
-  pwMode=!pwMode;
-  document.getElementById('loginPw').style.display=pwMode?'block':'none';
-  document.getElementById('btnLogin').textContent=pwMode?'Anmelden':'Login-Link senden';
-  document.getElementById('pwToggle').textContent=pwMode?'Stattdessen Login-Link per Mail (limitiert)':'Stattdessen mit Passwort anmelden';
-}
 async function doLogin(){
   const email=document.getElementById('loginEmail').value.trim();
+  const pw=document.getElementById('loginPw').value;
   const msg=document.getElementById('loginMsg'), btn=document.getElementById('btnLogin');
-  if(!email){msg.textContent='Bitte E-Mail eingeben.';return;}
+  if(!email||!pw){msg.textContent='E-Mail und Passwort eingeben.';return;}
   btn.disabled=true;
-  if(pwMode){
-    const pw=document.getElementById('loginPw').value;
-    const {error}=await sb.auth.signInWithPassword({email,password:pw});
-    msg.textContent=error?'Anmeldung fehlgeschlagen — E-Mail oder Passwort falsch, oder kein Zugang vergeben.':'';
-  }else{
-    /* shouldCreateUser:false — unbekannte E-Mails bekommen KEIN Konto */
-    const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:false}});
-    msg.textContent=error?(error.message.includes('rate')?'Mail-Versand aktuell limitiert (max. 2–3/Std.) — bitte mit Passwort anmelden.':'Kein Zugang für diese E-Mail. Zugänge vergibt Thomas.'):'Link verschickt — prüfe dein Postfach (auch Spam).';
-  }
+  const {error}=await sb.auth.signInWithPassword({email,password:pw});
+  msg.textContent=error?'Anmeldung fehlgeschlagen — E-Mail oder Passwort falsch, oder kein Zugang vergeben.':'';
   btn.disabled=false;
 }
-window.doLogin=doLogin; window.togglePw=togglePw;
+window.doLogin=doLogin;
 
 const MONL=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
 const isoAddM=(iso,i)=>{const d=new Date(iso+'T00:00:00Z');d.setUTCMonth(d.getUTCMonth()+i);return d.toISOString().slice(0,7)+'-01';};
